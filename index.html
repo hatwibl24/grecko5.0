@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Keeps Google Translate from breaking the app -->
+    <meta name="google" content="notranslate" />
+    
+    <title>Grecko</title>
+
+    <!-- 👇 ADDED: This sets the browser tab icon to your new logo -->
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563EB" />
+    
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Grecko" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Setup -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              primary: {
+                DEFAULT: '#2563EB',
+                dark: '#1D4ED8',
+              },
+            }
+          },
+        },
+      }
+    </script>
+</head>
+  <body class="bg-slate-950 text-slate-50 antialiased selection:bg-primary selection:text-white">
+    <div id="root"></div>
+    
+    <!-- Points to main.tsx in the root folder -->
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>
