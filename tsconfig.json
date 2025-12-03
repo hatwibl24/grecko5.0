@@ -21,12 +21,5 @@
     }
   },
   "include": ["."],
-  "exclude": [
-    "node_modules",
-    "vite.config.ts",
-    "vite.config.js",
-    "tsconfig.node.json",
-    "**/*.d.ts"
-  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
