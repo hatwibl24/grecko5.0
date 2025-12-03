@@ -21,5 +21,6 @@
     }
   },
   "include": ["."],
+  "exclude": ["node_modules", "src", "supabase/functions", "vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
