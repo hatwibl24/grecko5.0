@@ -94,19 +94,14 @@ export default function App() {
   const handleUpdateGoals = async (g: AcademicGoals) => { setAcademicGoals(g); if(user) await supabase.from('academic_goals').upsert({ user_id: user.id, current_gpa: g.currentGpa, target_gpa: g.targetGpa, courses_taken: g.coursesTaken, total_courses: g.totalCourses, courses_remaining: g.coursesRemaining, required_gpa: g.requiredGpa }); };
   const handleAddAssignment = async (a: Assignment) => { setAssignments([...assignments, a]); if(user) { const {data} = await supabase.from('assignments').insert({ user_id: user.id, title: a.title, course: a.course, due_date: a.dueDate, completed: a.completed }).select().single(); if(data) setAssignments(prev => prev.map(x => x.id === a.id ? {...x, id: data.id} : x)); } };
   const handleToggleAssignment = async (id: string) => { const updated = assignments.map(a => a.id === id ? { ...a, completed: !a.completed } : a); setAssignments(updated); const task = updated.find(a => a.id === id); if(task && user) await supabase.from('assignments').update({ completed: task.completed }).eq('id', id); };
+  const handlePurchaseCourse = async (cid: string) => { if(!user) return; await supabase.from('user_courses').insert({ user_id: user.id, course_id: cid }); setCourses(c => c.map(x => x.id === cid ? { ...x, isOwned: true } : x)); fetchUserData(); };
   
-  // --- FIX: REMOVED THE DOUBLE INSERT ---
-  // This function now only updates the UI. The DB insert happens in verify-payment.
-  const handlePurchaseCourse = async (cid: string) => { 
-      if(!user) return;
-      // Optimistic UI Update
-      setCourses(c => c.map(x => x.id === cid ? { ...x, isOwned: true } : x));
-      // Sync Data
-      fetchUserData(); 
-  };
-  
+  // --- UPDATED QUIZ STORAGE FUNCTION ---
   const handleAddQuizResult = async (r: QuizResult) => {
+    // 1. Update UI Immediately
     setQuizResults([r, ...quizResults]);
+    
+    // 2. Save to Database
     if (user) {
       const { error } = await supabase.from('quiz_results').insert({
         user_id: user.id,
@@ -114,7 +109,12 @@ export default function App() {
         score: r.score,
         total_questions: r.totalQuestions
       });
-      if (error) console.error("Failed to save quiz result:", error.message);
+
+      if (error) {
+        console.error("Failed to save quiz result:", error.message);
+      } else {
+        console.log("Quiz saved successfully.");
+      }
     }
   };
 
@@ -123,7 +123,7 @@ export default function App() {
   const handleCompleteAssignment = (id: string) => { setAssignments(p => p.map(a => a.id === id ? { ...a, completed: true } : a)); setUrgentAssignment(null); if(user) supabase.from('assignments').update({ completed: true }).eq('id', id); };
   const handleSnoozeAssignment = () => { if(urgentAssignment) { sessionStorage.setItem(`snoozed-${urgentAssignment.id}`, 'true'); setUrgentAssignment(null); } };
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
- 
+  
   const NavItem = ({ id, icon, label, onClick }: { id: PageRoute, icon: React.ReactNode, label: string, onClick?: () => void }) => {
     const isActive = route === id;
     return (
@@ -140,16 +140,17 @@ export default function App() {
   if (appState === 'landing') return <Landing onLoginWithEmail={() => { setAuthInitialView('login'); setAppState('auth'); }} onSignupWithEmail={() => { setAuthInitialView('signup'); setAppState('auth'); }} onGoogleAuth={signInWithGoogle} />;
   if (appState === 'auth') return <Auth onLogin={(u) => { setAppState('app'); }} onBack={() => setAppState('landing')} initialView={authInitialView} />;
   if (!user) return null;
- 
+  
   // LAYOUT LOGIC
   const isFullPage = route === 'mentor' || route === 'visual-learning';
- 
+  
   return (
+    // ROOT: h-screen overflow-hidden prevents body scroll, enables scrolling in main
     <div className="h-screen overflow-hidden bg-slate-950 text-slate-50 flex flex-col md:flex-row relative">
      
       {urgentAssignment && <AssignmentReminder assignment={urgentAssignment} isOpen={true} onComplete={handleCompleteAssignment} onSnooze={handleSnoozeAssignment} />}
-    
-      {/* DESKTOP SIDEBAR */}
+     
+      {/* DESKTOP SIDEBAR: Static full-height */}
       <aside className="hidden md:flex flex-none w-64 bg-zinc-900 border-r border-zinc-800 flex-col">
         <div className="p-6 flex items-center space-x-3 cursor-pointer" onClick={() => setRoute('dashboard')}><div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">G</div><span className="text-xl font-bold text-white tracking-tight">Grecko</span></div>
         <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
@@ -163,7 +164,7 @@ export default function App() {
         </nav>
         <div className="p-4 border-t border-zinc-800 space-y-2"><div className="flex items-center space-x-3 p-3"><img src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`} alt="User" className="w-8 h-8 rounded-full bg-slate-200 object-cover" /><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-white truncate">{user.name}</p></div><button onClick={() => signOut()} className="text-slate-400 hover:text-red-500 transition-colors"><LogOut className="w-4 h-4" /></button></div></div>
       </aside>
-     
+      
       {/* MOBILE HEADER */}
       {!isFullPage && (
         <header className="flex md:hidden flex-none items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800 sticky top-0 z-30">
@@ -174,7 +175,7 @@ export default function App() {
           </div>
         </header>
       )}
-     
+      
       {/* MOBILE MENU MODAL */}
       {isMobileMenuOpen && (<div className="fixed inset-0 z-50 md:hidden"><div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} /><div className="absolute right-0 top-0 bottom-0 w-64 bg-zinc-900 shadow-2xl p-6 animate-in slide-in-from-right duration-200 flex flex-col"><div className="flex justify-between items-center mb-8"><h2 className="text-lg font-bold text-white">Menu</h2><button onClick={() => setIsMobileMenuOpen(false)}><ChevronLeft className="w-6 h-6 text-white" /></button></div><div className="space-y-4 flex-1"><button onClick={() => { setRoute('profile'); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3 text-slate-300 w-full p-2 hover:bg-zinc-800 rounded-lg"><UserIcon className="w-5 h-5" /> <span>Profile</span></button>{isAdmin && (<button onClick={() => { setRoute('admin'); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3 text-red-400 w-full p-2 hover:bg-zinc-800 rounded-lg"><ShieldCheck className="w-5 h-5" /> <span>Admin Panel</span></button>)}</div><div className="pt-4 border-t border-zinc-800 space-y-4"><Button variant="danger" fullWidth onClick={() => signOut()} className="flex items-center justify-center gap-2"><LogOut className="w-4 h-4" /> Log Out</Button></div></div></div>)}
       
@@ -195,7 +196,7 @@ export default function App() {
           </div>
       </main>
       
-      {/* MOBILE BOTTOM NAV */}
+      {/* MOBILE BOTTOM NAV - Fixed Layer */}
       <nav className={`${isFullPage ? 'bg-black/90 border-t-0 text-white' : 'bg-zinc-900 border-t border-zinc-800'} md:hidden fixed bottom-0 left-0 right-0 px-2 py-2 flex justify-between items-center z-50 pb-safe transition-colors`}>
         <NavItem id="dashboard" icon={<LayoutDashboard className="w-6 h-6" />} label="Home" />
         <NavItem id="courses" icon={<BookOpen className="w-6 h-6" />} label="Courses" />
