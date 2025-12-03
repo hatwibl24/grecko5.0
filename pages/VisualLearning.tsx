@@ -61,7 +61,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                      */}
                      <iframe
                         ref={iframeRef}
-                        src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=1&mute=1&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0`}
+                        src={`https://www.youtube.com/embed/${youtubeId}?playsinline=1&mute=1&enablejsapi=1&autoplay=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`}
                         className="w-full h-full object-contain"
                         allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
                         title={item.title}
@@ -77,10 +77,10 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                     playsInline
                 />
             )}
-           
+          
             {/* Gradient Overlay for Text Visibility */}
             <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/80" />
-           
+          
             <div className="absolute right-4 bottom-32 md:bottom-24 z-30 flex flex-col items-center gap-6">
                  <button onClick={(e) => { e.stopPropagation(); toggleMute(); }} className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all active:scale-95">
                     {isMuted ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
@@ -114,7 +114,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
       const shuffledAds = shuffleArray([...courseAds]);
       const maxLength = Math.max(shuffledVisuals.length, shuffledAds.length);
       for (let i = 0; i < maxLength; i++) { if (shuffledVisuals[i]) mixedFeed.push(shuffledVisuals[i]); if (shuffledAds[i % shuffledAds.length]) { const ad = { ...shuffledAds[i % shuffledAds.length] }; ad.id = `ad-instance-${i}-${ad.id}`; mixedFeed.push(ad); } }
-      setFeed(mixedFeed); 
+      setFeed(mixedFeed);
       setDisplayedFeed([...mixedFeed]);
       if (mixedFeed.length > 0) setActiveId(mixedFeed[0].id); setLoading(false);
     };
@@ -154,15 +154,15 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   return (
     <div ref={containerRef} className="flex flex-col h-full w-full overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth">
       {displayedFeed.map((item) => (
-        <div key={item.id} data-id={item.id} className="flex-none relative w-full h-full snap-start snap-always flex items-center justify-center bg-black overflow-hidden group">
-           
+        <div key={item.id} data-id={item.id} className="flex-none relative w-full h-full max-h-[100dvh] snap-start snap-always flex items-center justify-center bg-black overflow-hidden group">
+          
             {/* CONTENT LAYER */}
             {item.type === 'video' && item.media_url ? (
                 <FeedVideoItem item={item} isActive={activeId === item.id} isMuted={isMuted} toggleMute={() => setIsMuted(!isMuted)} />
             ) : (
                 <>
                     {(item.type === 'image' || item.type === 'course_ad') && (
-                        <img src={item.media_url || 'https://via.placeholder.com/800'} className="w-full h-full object-cover animate-slow-zoom" alt="Content" onError={(e) => (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800'} />
+                        <img src={item.media_url || 'https://via.placeholder.com/800'} className="w-full h-full object-contain animate-slow-zoom" alt="Content" onError={(e) => (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800'} />
                     )}
                     {item.type === 'fact' && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center animate-slow-zoom"> <h1 className="text-3xl font-bold text-white leading-tight">"{item.title}"</h1> </div>
