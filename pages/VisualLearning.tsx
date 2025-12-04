@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronRight, Volume2, VolumeX, ShieldCheck, Play, Pause } from 'lucide-react';
+import { ChevronRight, Volume2, VolumeX, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Course } from '../types';
 
@@ -30,7 +30,6 @@ interface FeedItem {
   date?: string;
 }
 
-// --- VIDEO ITEM FOR YOUTUBE / MP4 ---
 const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem, isActive: boolean, isMuted: boolean, toggleMute: () => void }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -86,7 +85,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
             )}
             <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/80" />
             <div className="absolute right-4 bottom-32 md:bottom-24 z-30 flex flex-col items-center gap-6">
-                 <button onClick={(e) => { e.stopPropagation(); toggleMute(); }} className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all active:scale-95">
+                <button onClick={(e) => { e.stopPropagation(); toggleMute(); }} className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all active:scale-95">
                     {isMuted ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
                 </button>
             </div>
@@ -110,35 +109,25 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     return () => { document.head.removeChild(styleSheet); };
   }, []);
 
-  // --- FETCH VISUAL FEED + COURSE ADS ---
   useEffect(() => {
     const fetchData = async () => {
       const { data: visualData } = await supabase.from('visual_feed').select('*').order('created_at', { ascending: false });
       const { data: courseData } = await supabase.from('courses').select('*').eq('is_published', true);
-
-      const visualItems: FeedItem[] = (visualData || []).map((v: any) => ({
-        id: `vis-${v.id}`, type: v.type, title: v.title, media_url: v.media_url, date: new Date(v.created_at).toLocaleDateString()
-      }));
-
-      const courseAds: FeedItem[] = (courseData || []).map((c: Course) => ({
-        id: `ad-${c.id}`, type: 'course_ad', title: c.title, media_url: c.image, price: c.price, description: c.description, courseId: c.id
-      }));
-
-      // --- MERGE FEED LIKE TIKTOK (VIDEOS + ADS) ---
+      const visualItems: FeedItem[] = (visualData || []).map((v: any) => ({ id: `vis-${v.id}`, type: v.type, title: v.title, media_url: v.media_url, date: new Date(v.created_at).toLocaleDateString() }));
+      const courseAds: FeedItem[] = (courseData || []).map((c: Course) => ({ id: `ad-${c.id}`, type: 'course_ad', title: c.title, media_url: c.image, price: c.price, description: c.description, courseId: c.id }));
+      
       const mixedFeed: FeedItem[] = [];
       const shuffledVisuals = shuffleArray([...visualItems]);
       const shuffledAds = shuffleArray([...courseAds]);
       const maxLength = Math.max(shuffledVisuals.length, shuffledAds.length);
-
-      for (let i = 0; i < maxLength; i++) {
-        if (shuffledVisuals[i]) mixedFeed.push(shuffledVisuals[i]);
-        if (shuffledAds[i % shuffledAds.length]) {
-          const ad = { ...shuffledAds[i % shuffledAds.length] };
-          ad.id = `ad-instance-${i}-${ad.id}`;
-          mixedFeed.push(ad);
-        }
+      for (let i = 0; i < maxLength; i++) { 
+        if (shuffledVisuals[i]) mixedFeed.push(shuffledVisuals[i]); 
+        if (shuffledAds[i % shuffledAds.length]) { 
+          const ad = { ...shuffledAds[i % shuffledAds.length] }; 
+          ad.id = `ad-instance-${i}-${ad.id}`; 
+          mixedFeed.push(ad); 
+        } 
       }
-
       setFeed(mixedFeed);
       setDisplayedFeed([...mixedFeed]);
       if (mixedFeed.length > 0) setActiveId(mixedFeed[0].id);
@@ -166,21 +155,19 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   }, [handleScroll]);
 
   useEffect(() => {
-      if (loading || !containerRef.current) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                  const id = entry.target.getAttribute('data-id');
-                  if (id) setActiveId(id);
-              }
-          });
-      }, { root: containerRef.current, threshold: 0.6 });
-
-      const slides = containerRef.current.querySelectorAll('.snap-start');
-      slides.forEach(slide => observer.current?.observe(slide));
-
-      return () => { if (observer.current) observer.current.disconnect(); };
+    if (loading || !containerRef.current) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver((entries) => { 
+      entries.forEach((entry) => { 
+        if (entry.isIntersecting) { 
+          const id = entry.target.getAttribute('data-id'); 
+          if (id) setActiveId(id); 
+        } 
+      }); 
+    }, { root: containerRef.current, threshold: 0.6 });
+    const slides = containerRef.current.querySelectorAll('.snap-start');
+    slides.forEach(slide => observer.current?.observe(slide));
+    return () => { if (observer.current) observer.current.disconnect(); };
   }, [loading, displayedFeed]);
 
   if (loading) return <div className="h-full flex items-center justify-center text-slate-500 bg-black">Loading feed...</div>;
@@ -193,36 +180,48 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                 <FeedVideoItem item={item} isActive={activeId === item.id} isMuted={isMuted} toggleMute={() => setIsMuted(!isMuted)} />
             ) : (
                 <>
-                    {(item.type === 'image' || item.type === 'course_ad') && (
-                        <img src={item.media_url || 'https://via.placeholder.com/800'} className="w-full h-full object-cover animate-slow-zoom" alt="Content" />
-                    )}
-                    {item.type === 'fact' && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center animate-slow-zoom">
-                            <h1 className="text-3xl font-bold text-white leading-tight">"{item.title}"</h1>
-                        </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
+                  {(item.type === 'image' || item.type === 'course_ad') && (
+                      <img src={item.media_url || 'https://via.placeholder.com/800'} className="w-full h-full object-cover animate-slow-zoom" alt="Content" onError={(e) => ((e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800')} />
+                  )}
+                  {item.type === 'fact' && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center animate-slow-zoom">
+                        <h1 className="text-3xl font-bold text-white leading-tight">"{item.title}"</h1>
+                      </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
                 </>
             )}
 
-            {/* COURSE AD / INFO BOTTOM */}
+            <div className="absolute right-4 bottom-32 md:bottom-24 flex flex-col gap-6 items-center z-30"></div>
+
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 md:pb-8 z-20 flex flex-col pointer-events-none">
                 <div className="pointer-events-auto">
                     {item.type === 'course_ad' ? (
                         <div className="mb-2">
                             <button onClick={onNavigateToCourse} className="w-fit bg-[#8B6C58]/95 backdrop-blur-md hover:bg-[#8B6C58] text-white py-2 px-5 rounded-full flex items-center gap-3 transition-all active:scale-95 mb-3 shadow-lg">
-                                <span className="font-bold text-sm">Get Course • ${item.price}</span>
-                                <ChevronRight className="w-4 h-4 opacity-80" />
+                              <span className="font-bold text-sm">Get Course • ${item.price}</span>
+                              <ChevronRight className="w-4 h-4 opacity-80" />
                             </button>
                             <div className="pr-16">
-                                <h3 className="text-white font-bold text-lg mb-1 drop-shadow-md">{item.title}</h3>
-                                <p className="text-white/90 text-sm leading-relaxed line-clamp-2 drop-shadow-md">{item.description}</p>
+                              <h3 className="text-white font-bold text-lg mb-1 drop-shadow-md">{item.title}</h3>
+                              <p className="text-white/90 text-sm leading-relaxed line-clamp-2 drop-shadow-md">{item.description}</p>
                             </div>
                         </div>
                     ) : (
                         <div className="pr-16 mb-2">
-                            <div className="flex items-center gap-2 mb-2 opacity-90">
-                                <div className="p-1 bg-white/20 rounded-full backdrop-blur-sm">
-                                    <ShieldCheck className="w-4 h-4 text-white" />
-                                </div>
-                                <span className="text-white font-bold text-sm tracking-wide drop
+                          <div className="flex items-center gap-2 mb-2 opacity-90">
+                              <div className="p-1 bg-white/20 rounded-full backdrop-blur-sm">
+                                  <ShieldCheck className="w-4 h-4 text-white" />
+                              </div>
+                              <span className="text-white font-bold text-sm tracking-wide drop-shadow-md">Grecko Admin</span>
+                          </div>
+                          <p className="text-white font-medium text-lg leading-snug drop-shadow-md">{item.title}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+      ))}
+    </div>
+  );
+};
