@@ -34,44 +34,121 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     const videoRef = useRef<HTMLVideoElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const youtubeId = getYoutubeId(item.media_url || '');
+    const [hasUserInteraction, setHasUserInteraction] = useState(false);
+
+    // Handle user interaction for iOS autoplay
+    useEffect(() => {
+        const handleInteraction = () => {
+            setHasUserInteraction(true);
+        };
+
+        window.addEventListener('touchstart', handleInteraction);
+        window.addEventListener('click', handleInteraction);
+
+        return () => {
+            window.removeEventListener('touchstart', handleInteraction);
+            window.removeEventListener('click', handleInteraction);
+        };
+    }, []);
 
     useEffect(() => {
         if (videoRef.current && !youtubeId) {
             if (isActive) {
                 videoRef.current.currentTime = 0;
-                videoRef.current.play().catch(e => console.log("Autoplay blocked", e));
+                const playPromise = videoRef.current.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => {
+                        console.log("Autoplay blocked:", e);
+                    });
+                }
             } else {
                 videoRef.current.pause();
             }
         }
     }, [isActive, youtubeId]);
 
+    // Special handling for iOS YouTube
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
-            const command = isActive ? 'playVideo' : 'pauseVideo';
-            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: command, args: '' }), '*');
+            // iOS needs special handling
+            if (isActive) {
+                // Use timeout to ensure DOM is ready
+                setTimeout(() => {
+                    if (iframeRef.current?.contentWindow) {
+                        // For iOS, we need to set up the player properly
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                        if (isIOS && !hasUserInteraction) {
+                            // iOS requires user interaction before playing
+                            // We'll show the thumbnail and let user tap
+                        } else {
+                            iframeRef.current.contentWindow.postMessage(JSON.stringify({ 
+                                event: 'command', 
+                                func: 'playVideo', 
+                                args: '' 
+                            }), '*');
+                        }
+                    }
+                }, 500);
+            } else {
+                iframeRef.current.contentWindow?.postMessage(JSON.stringify({ 
+                    event: 'command', 
+                    func: 'pauseVideo', 
+                    args: '' 
+                }), '*');
+            }
         }
-    }, [isActive, youtubeId]);
+    }, [isActive, youtubeId, hasUserInteraction]);
 
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
             const command = isMuted ? 'mute' : 'unMute';
-            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: command, args: '' }), '*');
+            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ 
+                event: 'command', 
+                func: command, 
+                args: '' 
+            }), '*');
         }
     }, [isMuted, youtubeId]);
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     return (
         <div className="w-full h-full relative bg-black flex items-center justify-center">
             {youtubeId ? (
                 <div className="w-full h-full relative">
-                    <iframe
-                        ref={iframeRef}
-                        src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=1&mute=1&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0`}
-                        className="absolute top-0 left-0 w-full h-full"
-                        allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
-                        title={item.title}
-                        frameBorder="0"
-                    />
+                    {/* YouTube embed with iOS specific fixes */}
+                    <div className="relative w-full h-full">
+                        {isIOS && !hasUserInteraction ? (
+                            // For iOS before user interaction, show thumbnail
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <img 
+                                    src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`}
+                                    className="w-full h-full object-cover"
+                                    alt="YouTube video"
+                                    onClick={() => setHasUserInteraction(true)}
+                                />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                    <div 
+                                        className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md cursor-pointer"
+                                        onClick={() => setHasUserInteraction(true)}
+                                    >
+                                        <div className="w-0 h-0 border-y-8 border-l-12 border-y-transparent border-l-white ml-2" />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+                        <iframe
+                            ref={iframeRef}
+                            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=${isActive ? 1 : 0}&mute=${isMuted ? 1 : 0}&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0${isIOS ? '&playsinline=1&webkit-playsinline=1' : ''}`}
+                            className={`absolute top-0 left-0 w-full h-full ${isIOS && !hasUserInteraction ? 'opacity-0' : 'opacity-100'}`}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            title={item.title}
+                            frameBorder="0"
+                            playsInline
+                            webkit-playsinline="true"
+                        />
+                    </div>
                 </div>
             ) : (
                 <video
@@ -81,6 +158,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                     muted={isMuted}
                     loop
                     playsInline
+                    webkit-playsinline="true"
                 />
             )}
             <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/80" />
@@ -104,9 +182,74 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
 
   useEffect(() => {
     const styleSheet = document.createElement("style");
-    styleSheet.innerText = `@keyframes slowZoom { 0% { transform: scale(1); } 100% { transform: scale(1.05); } } .animate-slow-zoom { animation: slowZoom 20s infinite alternate ease-in-out; }`;
+    styleSheet.innerText = `
+        @keyframes slowZoom { 
+            0% { transform: scale(1); } 
+            100% { transform: scale(1.05); } 
+        } 
+        
+        .animate-slow-zoom { 
+            animation: slowZoom 20s infinite alternate ease-in-out; 
+        }
+        
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS specific styles */
+            .ios-full-height {
+                height: -webkit-fill-available !important;
+                min-height: -webkit-fill-available !important;
+            }
+            
+            img {
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                user-select: none;
+            }
+            
+            /* Prevent elastic scrolling */
+            body {
+                overscroll-behavior-y: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Better image rendering on iOS */
+            .ios-image-render {
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: crisp-edges;
+            }
+        }
+        
+        /* Force hardware acceleration for smoother animations */
+        .hardware-accelerate {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        
+        /* Full viewport height with fallback */
+        .full-vh {
+            height: 100vh;
+            min-height: 100vh;
+        }
+        
+        @supports (height: 100dvh) {
+            .full-vh {
+                height: 100dvh;
+                min-height: 100dvh;
+            }
+        }
+    `;
     document.head.appendChild(styleSheet);
-    return () => { document.head.removeChild(styleSheet); };
+    
+    // Add viewport meta tag for iOS
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (meta) {
+        meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+    
+    return () => { 
+        document.head.removeChild(styleSheet); 
+    };
   }, []);
 
   useEffect(() => {
@@ -173,31 +316,50 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   if (loading) return <div className="h-full flex items-center justify-center text-slate-500 bg-black">Loading feed...</div>;
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full w-full overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth">
+    <div 
+      ref={containerRef} 
+      className="flex flex-col h-full w-full overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth ios-full-height"
+    >
       {displayedFeed.map((item) => (
-        <div key={item.id} data-id={item.id} className="flex-none relative w-full h-[100vh] snap-start snap-always flex items-center justify-center bg-black overflow-hidden group">
+        <div 
+          key={item.id} 
+          data-id={item.id} 
+          className="flex-none relative w-full full-vh snap-start snap-always flex items-center justify-center bg-black overflow-hidden group hardware-accelerate"
+        >
             {item.type === 'video' && item.media_url ? (
-                <FeedVideoItem item={item} isActive={activeId === item.id} isMuted={isMuted} toggleMute={() => setIsMuted(!isMuted)} />
+                <FeedVideoItem 
+                  item={item} 
+                  isActive={activeId === item.id} 
+                  isMuted={isMuted} 
+                  toggleMute={() => setIsMuted(!isMuted)} 
+                />
             ) : (
                 <>
                   {(item.type === 'image' || item.type === 'course_ad') && (
                       <img 
                         src={item.media_url || 'https://via.placeholder.com/800'} 
-                        className="w-full h-full object-cover animate-slow-zoom" 
+                        className="w-full h-full object-cover animate-slow-zoom ios-image-render"
+                        style={{
+                          objectFit: 'cover',
+                          width: '100%',
+                          height: '100%',
+                          display: 'block'
+                        }}
                         alt="Content" 
-                        onError={(e) => ((e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800')}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800';
+                        }}
                       />
                   )}
                   {item.type === 'fact' && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center animate-slow-zoom">
-                        <h1 className="text-3xl font-bold text-white leading-tight">"{item.title}"</h1>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center">
+                        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight px-4">"{item.title}"</h1>
                       </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
                 </>
             )}
-
-            <div className="absolute right-4 bottom-32 md:bottom-24 flex flex-col gap-6 items-center z-30"></div>
 
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 md:pb-8 z-20 flex flex-col pointer-events-none">
                 <div className="pointer-events-auto">
