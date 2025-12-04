@@ -35,7 +35,7 @@ interface FeedItem {
  * - Supports YouTube embed URLs and direct video (mp4)
  * - Lazy-loads YouTube iframe only when item isActive (speeds up scrolling)
  * - Uses postMessage to play/pause/mute/seek for YouTube
- * - Adds a seek bar that works for mp4 and YouTube
+ * - Adds a seek bar that works for mp4 and YonnuTube
  * - Keeps your existing props and toggleMute behavior
  */
 const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem, isActive: boolean, isMuted: boolean, toggleMute: () => void }) => {
