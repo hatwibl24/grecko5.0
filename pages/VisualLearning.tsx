@@ -35,6 +35,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const youtubeId = getYoutubeId(item.media_url || '');
     const [hasUserInteraction, setHasUserInteraction] = useState(false);
+    const isIOS = typeof window !== 'undefined' ? /iPad|iPhone|iPod/.test(navigator.userAgent) : false;
 
     // Handle user interaction for iOS autoplay
     useEffect(() => {
@@ -55,12 +56,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
         if (videoRef.current && !youtubeId) {
             if (isActive) {
                 videoRef.current.currentTime = 0;
-                const playPromise = videoRef.current.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => {
-                        console.log("Autoplay blocked:", e);
-                    });
-                }
+                videoRef.current.play().catch(e => console.log("Autoplay blocked", e));
             } else {
                 videoRef.current.pause();
             }
@@ -70,16 +66,11 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     // Special handling for iOS YouTube
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
-            // iOS needs special handling
             if (isActive) {
-                // Use timeout to ensure DOM is ready
                 setTimeout(() => {
                     if (iframeRef.current?.contentWindow) {
-                        // For iOS, we need to set up the player properly
-                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                         if (isIOS && !hasUserInteraction) {
                             // iOS requires user interaction before playing
-                            // We'll show the thumbnail and let user tap
                         } else {
                             iframeRef.current.contentWindow.postMessage(JSON.stringify({ 
                                 event: 'command', 
@@ -97,7 +88,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                 }), '*');
             }
         }
-    }, [isActive, youtubeId, hasUserInteraction]);
+    }, [isActive, youtubeId, hasUserInteraction, isIOS]);
 
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
@@ -110,8 +101,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
         }
     }, [isMuted, youtubeId]);
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
     return (
         <div className="w-full h-full relative bg-black flex items-center justify-center">
             {youtubeId ? (
@@ -120,18 +109,17 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                     <div className="relative w-full h-full">
                         {isIOS && !hasUserInteraction ? (
                             // For iOS before user interaction, show thumbnail
-                            <div className="absolute inset-0 flex items-center justify-center">
+                            <div 
+                                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                                onClick={() => setHasUserInteraction(true)}
+                            >
                                 <img 
                                     src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`}
                                     className="w-full h-full object-cover"
                                     alt="YouTube video"
-                                    onClick={() => setHasUserInteraction(true)}
                                 />
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                    <div 
-                                        className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md cursor-pointer"
-                                        onClick={() => setHasUserInteraction(true)}
-                                    >
+                                    <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
                                         <div className="w-0 h-0 border-y-8 border-l-12 border-y-transparent border-l-white ml-2" />
                                     </div>
                                 </div>
@@ -139,14 +127,12 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                         ) : null}
                         <iframe
                             ref={iframeRef}
-                            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=${isActive ? 1 : 0}&mute=${isMuted ? 1 : 0}&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0${isIOS ? '&playsinline=1&webkit-playsinline=1' : ''}`}
+                            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=${isActive ? 1 : 0}&mute=${isMuted ? 1 : 0}&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0${isIOS ? '&playsinline=1' : ''}`}
                             className={`absolute top-0 left-0 w-full h-full ${isIOS && !hasUserInteraction ? 'opacity-0' : 'opacity-100'}`}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen
                             title={item.title}
                             frameBorder="0"
-                            playsInline
-                            webkit-playsinline="true"
                         />
                     </div>
                 </div>
@@ -158,7 +144,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                     muted={isMuted}
                     loop
                     playsInline
-                    webkit-playsinline="true"
                 />
             )}
             <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/80" />
@@ -206,12 +191,6 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                 user-select: none;
             }
             
-            /* Prevent elastic scrolling */
-            body {
-                overscroll-behavior-y: none;
-                -webkit-overflow-scrolling: touch;
-            }
-            
             /* Better image rendering on iOS */
             .ios-image-render {
                 image-rendering: -webkit-optimize-contrast;
@@ -238,14 +217,13 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                 min-height: 100dvh;
             }
         }
+        
+        /* Ensure proper scroll on mobile */
+        .mobile-scroll-container {
+            -webkit-overflow-scrolling: touch;
+        }
     `;
     document.head.appendChild(styleSheet);
-    
-    // Add viewport meta tag for iOS
-    const meta = document.querySelector('meta[name="viewport"]');
-    if (meta) {
-        meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-    }
     
     return () => { 
         document.head.removeChild(styleSheet); 
@@ -318,7 +296,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   return (
     <div 
       ref={containerRef} 
-      className="flex flex-col h-full w-full overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth ios-full-height"
+      className="flex flex-col h-full w-full overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth ios-full-height mobile-scroll-container"
     >
       {displayedFeed.map((item) => (
         <div 
