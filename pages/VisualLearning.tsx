@@ -61,9 +61,9 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     }, [isMuted, youtubeId]);
 
     return (
-        <div className="absolute inset-0 bg-black flex items-center justify-center">
+        <div className="w-full h-full relative bg-black flex items-center justify-center">
             {youtubeId ? (
-                <div className="relative w-full h-full">
+                <div className="w-full h-full relative">
                     <iframe
                         ref={iframeRef}
                         src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=1&mute=1&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0`}
@@ -71,7 +71,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                         allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
                         title={item.title}
                         frameBorder="0"
-                        style={{ pointerEvents: 'none' }}
                     />
                 </div>
             ) : (
@@ -84,7 +83,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                     playsInline
                 />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
+            <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/80" />
             <div className="absolute right-4 bottom-32 md:bottom-24 z-30 flex flex-col items-center gap-6">
                 <button onClick={(e) => { e.stopPropagation(); toggleMute(); }} className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all active:scale-95">
                     {isMuted ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
@@ -104,70 +103,10 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   const observer = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    // Add viewport meta tag for mobile
-    const meta = document.createElement('meta');
-    meta.name = 'viewport';
-    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
-    document.head.appendChild(meta);
-
-    // Add CSS for full coverage
     const styleSheet = document.createElement("style");
-    styleSheet.innerText = `
-        @keyframes slowZoom { 
-            0% { transform: scale(1); } 
-            100% { transform: scale(1.05); } 
-        } 
-        .animate-slow-zoom { 
-            animation: slowZoom 20s infinite alternate ease-in-out; 
-        }
-        
-        /* Force full screen coverage */
-        html, body, #root {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        
-        /* Consistent full coverage */
-        .full-cover {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        
-        /* Mobile-specific fixes */
-        @media (max-width: 768px) {
-            .full-cover {
-                height: 100vh !important;
-            }
-            
-            /* iOS Safari fix */
-            @supports (-webkit-touch-callout: none) {
-                .full-cover {
-                    height: -webkit-fill-available !important;
-                }
-            }
-        }
-        
-        /* Hide scrollbar but keep functionality */
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-    `;
+    styleSheet.innerText = `@keyframes slowZoom { 0% { transform: scale(1); } 100% { transform: scale(1.05); } } .animate-slow-zoom { animation: slowZoom 20s infinite alternate ease-in-out; }`;
     document.head.appendChild(styleSheet);
-    
-    return () => {
-      document.head.removeChild(styleSheet);
-      document.head.removeChild(meta);
-    };
+    return () => { document.head.removeChild(styleSheet); };
   }, []);
 
   useEffect(() => {
@@ -231,45 +170,37 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     return () => { if (observer.current) observer.current.disconnect(); };
   }, [loading, displayedFeed]);
 
-  if (loading) return <div className="full-cover flex items-center justify-center text-slate-500 bg-black">Loading feed...</div>;
+  if (loading) return <div className="h-full flex items-center justify-center text-slate-500 bg-black">Loading feed...</div>;
 
   return (
-    <div 
-      ref={containerRef} 
-      className="full-cover overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar"
-    >
+    <div ref={containerRef} className="flex flex-col h-full w-full overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth">
       {displayedFeed.map((item) => (
-        <div 
-          key={item.id} 
-          data-id={item.id} 
-          className="full-cover snap-start snap-always relative bg-black overflow-hidden"
-        >
+        <div key={item.id} data-id={item.id} className="flex-none relative w-full h-[100vh] snap-start snap-always flex items-center justify-center bg-black overflow-hidden group">
             {item.type === 'video' && item.media_url ? (
                 <FeedVideoItem item={item} isActive={activeId === item.id} isMuted={isMuted} toggleMute={() => setIsMuted(!isMuted)} />
             ) : (
                 <>
                   {(item.type === 'image' || item.type === 'course_ad') && (
-                      <div className="full-cover">
-                        <img 
-                          src={item.media_url || 'https://via.placeholder.com/800'} 
-                          className="full-cover object-cover animate-slow-zoom"
-                          alt="Content" 
-                          onError={(e) => ((e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800')}
-                          style={{ objectPosition: 'center center' }}
-                        />
-                      </div>
+                      <img 
+                        src={item.media_url || 'https://via.placeholder.com/800'} 
+                        className="w-full h-full object-cover animate-slow-zoom" 
+                        alt="Content" 
+                        onError={(e) => ((e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800')}
+                      />
                   )}
                   {item.type === 'fact' && (
-                      <div className="full-cover flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center">
-                        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight px-4">"{item.title}"</h1>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center animate-slow-zoom">
+                        <h1 className="text-3xl font-bold text-white leading-tight">"{item.title}"</h1>
                       </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
                 </>
             )}
 
-            <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 md:pb-8 z-20">
-                <div>
+            <div className="absolute right-4 bottom-32 md:bottom-24 flex flex-col gap-6 items-center z-30"></div>
+
+            <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 md:pb-8 z-20 flex flex-col pointer-events-none">
+                <div className="pointer-events-auto">
                     {item.type === 'course_ad' ? (
                         <div className="mb-2">
                             <button onClick={onNavigateToCourse} className="w-fit bg-[#8B6C58]/95 backdrop-blur-md hover:bg-[#8B6C58] text-white py-2 px-5 rounded-full flex items-center gap-3 transition-all active:scale-95 mb-3 shadow-lg">
