@@ -3,23 +3,26 @@ import {
   LayoutDashboard, BookOpen, PenTool, User as UserIcon,
   Bell, Menu, LogOut, ChevronLeft, Video, ShieldCheck
 } from 'lucide-react';
-import { Auth } from './pages/Auth';
-import { Landing } from './pages/Landing';
-import { Dashboard } from './pages/Dashboard';
+
+import Auth from './pages/Auth';
+import Landing from './pages/Landing';
+import Dashboard from './pages/Dashboard';
 import { Courses, CourseReader } from './pages/Courses';
-import { StudyTools } from './pages/StudyTools';
-import { AiMentor } from './pages/AiMentor';
-import { Profile } from './pages/Profile';
-import { Notifications } from './pages/Notifications';
-import { VisualLearning } from './pages/VisualLearning';
-import { Admin } from './pages/Admin';
-import { UpdatePassword } from './pages/UpdatePassword';
-import { Confirmation } from './pages/Confirmation';
+import StudyTools from './pages/StudyTools';
+import AiMentor from './pages/AiMentor';
+import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
+import VisualLearning from './pages/VisualLearning'; // ✅ FIXED
+import Admin from './pages/Admin'; // ✅ FIXED
+import UpdatePassword from './pages/UpdatePassword';
+import Confirmation from './pages/Confirmation';
+
 import { PageRoute, Assignment, AcademicGoals, Course, QuizResult, Notification } from './types';
 import { Button } from './components/UI';
 import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import { AssignmentReminder } from './components/AssignmentReminder';
+
 
 const AiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
