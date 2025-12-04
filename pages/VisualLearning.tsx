@@ -48,28 +48,84 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
 
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
-            const command = isActive ? 'playVideo' : 'pauseVideo';
-            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: command, args: '' }), '*');
+            // Add small delay for mobile to ensure DOM is ready
+            setTimeout(() => {
+                if (iframeRef.current && iframeRef.current.contentWindow) {
+                    const command = isActive ? 'playVideo' : 'pauseVideo';
+                    iframeRef.current.contentWindow.postMessage(
+                        JSON.stringify({ 
+                            event: 'command', 
+                            func: command, 
+                            args: '',
+                            origin: window.location.origin
+                        }), 
+                        '*'
+                    );
+                }
+            }, 100);
         }
     }, [isActive, youtubeId]);
 
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
-            const command = isMuted ? 'mute' : 'unMute';
-            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: command, args: '' }), '*');
+            setTimeout(() => {
+                if (iframeRef.current && iframeRef.current.contentWindow) {
+                    const command = isMuted ? 'mute' : 'unMute';
+                    iframeRef.current.contentWindow.postMessage(
+                        JSON.stringify({ 
+                            event: 'command', 
+                            func: command, 
+                            args: '' 
+                        }), 
+                        '*'
+                    );
+                }
+            }, 100);
         }
     }, [isMuted, youtubeId]);
+
+    // Mobile optimization for viewport
+    useEffect(() => {
+        const handleMobileViewport = () => {
+            if (window.innerWidth < 768) {
+                const viewportMeta = document.querySelector('meta[name="viewport"]');
+                if (viewportMeta) {
+                    viewportMeta.setAttribute('content', 
+                        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+                    );
+                }
+            }
+        };
+        
+        handleMobileViewport();
+        window.addEventListener('resize', handleMobileViewport);
+        
+        return () => {
+            window.removeEventListener('resize', handleMobileViewport);
+        };
+    }, []);
 
     return (
         <div className="w-full h-full relative bg-black flex items-center justify-center">
             {youtubeId ? (
-                <div className="w-full h-full relative pointer-events-none">
-                    <div className="absolute inset-0 z-10 bg-transparent" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black">
                     <iframe
                         ref={iframeRef}
-                        src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=1&mute=1&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0`}
-                        className="w-full h-full object-contain"
-                        allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
+                        src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&autoplay=${isActive ? 1 : 0}&mute=${isMuted ? 1 : 0}&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0&playsinline=1`}
+                        className="w-full h-full"
+                        style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            width: '100%',
+                            height: '100%',
+                            transform: 'translate(-50%, -50%)',
+                            maxWidth: '100vw',
+                            maxHeight: '100vh'
+                        }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        frameBorder="0"
                         title={item.title}
                     />
                 </div>
@@ -81,11 +137,18 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                     muted={isMuted}
                     loop
                     playsInline
+                    style={{
+                        maxWidth: '100vw',
+                        maxHeight: '100vh'
+                    }}
                 />
             )}
             <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/80" />
             <div className="absolute right-4 bottom-32 md:bottom-24 z-30 flex flex-col items-center gap-6">
-                <button onClick={(e) => { e.stopPropagation(); toggleMute(); }} className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all active:scale-95">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); toggleMute(); }} 
+                    className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all active:scale-95"
+                >
                     {isMuted ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
                 </button>
             </div>
@@ -102,9 +165,95 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   const containerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
+  // Add dynamic CSS animations
   useEffect(() => {
     const styleSheet = document.createElement("style");
-    styleSheet.innerText = `@keyframes slowZoom { 0% { transform: scale(1); } 100% { transform: scale(1.05); } } .animate-slow-zoom { animation: slowZoom 20s infinite alternate ease-in-out; }`;
+    styleSheet.innerText = `
+        @keyframes kenBurns {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.05) translate(-1%, -1%); }
+            100% { transform: scale(1) translate(1%, 1%); }
+        }
+        
+        @keyframes gentleFloat {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.02) translateY(-10px); }
+        }
+        
+        @keyframes softPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+        
+        .animate-kenBurns {
+            animation: kenBurns 20s infinite alternate ease-in-out;
+        }
+        
+        .animate-gentleFloat {
+            animation: gentleFloat 15s infinite ease-in-out;
+        }
+        
+        .animate-softPulse {
+            animation: softPulse 10s infinite ease-in-out;
+        }
+        
+        /* Mobile-specific fixes */
+        @media (max-width: 768px) {
+            .mobile-fullscreen {
+                width: 100vw !important;
+                height: 100vh !important;
+            }
+            
+            .mobile-image-contain {
+                max-width: 100vw !important;
+                max-height: 100vh !important;
+                width: auto !important;
+                height: auto !important;
+                object-fit: contain !important;
+            }
+            
+            /* Prevent mobile pinch zoom */
+            * {
+                touch-action: pan-y;
+            }
+            
+            /* Fix for iOS Safari */
+            @supports (-webkit-touch-callout: none) {
+                .mobile-fullscreen {
+                    height: -webkit-fill-available;
+                }
+            }
+        }
+        
+        /* Support for dynamic viewport height */
+        @supports (height: 100dvh) {
+            .mobile-fullscreen {
+                height: 100dvh;
+            }
+        }
+        
+        /* Image container styles */
+        .image-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: black;
+        }
+        
+        /* Dynamic image with subtle effects */
+        .dynamic-image {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+    `;
     document.head.appendChild(styleSheet);
     return () => { document.head.removeChild(styleSheet); };
   }, []);
@@ -113,13 +262,28 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     const fetchData = async () => {
       const { data: visualData } = await supabase.from('visual_feed').select('*').order('created_at', { ascending: false });
       const { data: courseData } = await supabase.from('courses').select('*').eq('is_published', true);
-      const visualItems: FeedItem[] = (visualData || []).map((v: any) => ({ id: `vis-${v.id}`, type: v.type, title: v.title, media_url: v.media_url, date: new Date(v.created_at).toLocaleDateString() }));
-      const courseAds: FeedItem[] = (courseData || []).map((c: Course) => ({ id: `ad-${c.id}`, type: 'course_ad', title: c.title, media_url: c.image, price: c.price, description: c.description, courseId: c.id }));
+      const visualItems: FeedItem[] = (visualData || []).map((v: any) => ({ 
+          id: `vis-${v.id}`, 
+          type: v.type, 
+          title: v.title, 
+          media_url: v.media_url, 
+          date: new Date(v.created_at).toLocaleDateString() 
+      }));
+      const courseAds: FeedItem[] = (courseData || []).map((c: Course) => ({ 
+          id: `ad-${c.id}`, 
+          type: 'course_ad', 
+          title: c.title, 
+          media_url: c.image, 
+          price: c.price, 
+          description: c.description, 
+          courseId: c.id 
+      }));
       
       const mixedFeed: FeedItem[] = [];
       const shuffledVisuals = shuffleArray([...visualItems]);
       const shuffledAds = shuffleArray([...courseAds]);
       const maxLength = Math.max(shuffledVisuals.length, shuffledAds.length);
+      
       for (let i = 0; i < maxLength; i++) { 
         if (shuffledVisuals[i]) mixedFeed.push(shuffledVisuals[i]); 
         if (shuffledAds[i % shuffledAds.length]) { 
@@ -128,6 +292,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
           mixedFeed.push(ad); 
         } 
       }
+      
       setFeed(mixedFeed);
       setDisplayedFeed([...mixedFeed]);
       if (mixedFeed.length > 0) setActiveId(mixedFeed[0].id);
@@ -173,19 +338,57 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   if (loading) return <div className="h-full flex items-center justify-center text-slate-500 bg-black">Loading feed...</div>;
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full w-full overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth">
+    <div 
+      ref={containerRef} 
+      className="flex flex-col h-screen w-screen overflow-y-scroll snap-y snap-mandatory bg-black no-scrollbar scroll-smooth mobile-fullscreen"
+    >
       {displayedFeed.map((item) => (
-        <div key={item.id} data-id={item.id} className="flex-none relative w-full h-full snap-start snap-always flex items-center justify-center bg-black overflow-hidden group">
+        <div 
+          key={item.id} 
+          data-id={item.id} 
+          className="flex-none relative w-screen h-screen snap-start snap-always bg-black overflow-hidden group mobile-fullscreen"
+        >
             {item.type === 'video' && item.media_url ? (
-                <FeedVideoItem item={item} isActive={activeId === item.id} isMuted={isMuted} toggleMute={() => setIsMuted(!isMuted)} />
+                <FeedVideoItem 
+                  item={item} 
+                  isActive={activeId === item.id} 
+                  isMuted={isMuted} 
+                  toggleMute={() => setIsMuted(!isMuted)} 
+                />
             ) : (
                 <>
                   {(item.type === 'image' || item.type === 'course_ad') && (
-                      <img src={item.media_url || 'https://via.placeholder.com/800'} className="w-full h-full object-cover animate-slow-zoom" alt="Content" onError={(e) => ((e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800')} />
+                      <div className="image-container">
+                          <div className={`dynamic-image ${activeId === item.id ? 'animate-gentleFloat' : ''}`}>
+                              <img 
+                                  src={item.media_url || 'https://via.placeholder.com/800'} 
+                                  className="mobile-image-contain"
+                                  style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'contain',
+                                      display: 'block',
+                                      margin: '0 auto'
+                                  }}
+                                  alt="Content"
+                                  onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800';
+                                  }}
+                              />
+                              
+                              {/* Subtle dynamic border effect */}
+                              {activeId === item.id && (
+                                  <div className="absolute inset-0 border-2 border-white/10 rounded pointer-events-none" />
+                              )}
+                          </div>
+                          
+                          {/* Ambient light effect */}
+                          <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-transparent via-black/20 to-transparent opacity-50" />
+                      </div>
                   )}
                   {item.type === 'fact' && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center animate-slow-zoom">
-                        <h1 className="text-3xl font-bold text-white leading-tight">"{item.title}"</h1>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-900 to-black text-center animate-softPulse">
+                        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight px-4">"{item.title}"</h1>
                       </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
@@ -198,7 +401,10 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                 <div className="pointer-events-auto">
                     {item.type === 'course_ad' ? (
                         <div className="mb-2">
-                            <button onClick={onNavigateToCourse} className="w-fit bg-[#8B6C58]/95 backdrop-blur-md hover:bg-[#8B6C58] text-white py-2 px-5 rounded-full flex items-center gap-3 transition-all active:scale-95 mb-3 shadow-lg">
+                            <button 
+                              onClick={onNavigateToCourse} 
+                              className="w-fit bg-[#8B6C58]/95 backdrop-blur-md hover:bg-[#8B6C58] text-white py-2 px-5 rounded-full flex items-center gap-3 transition-all active:scale-95 mb-3 shadow-lg"
+                            >
                               <span className="font-bold text-sm">Get Course • ${item.price}</span>
                               <ChevronRight className="w-4 h-4 opacity-80" />
                             </button>
