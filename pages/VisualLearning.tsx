@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronRight, Volume2, VolumeX, ShieldCheck } from 'lucide-react';
+import { Share2, ChevronRight, Volume2, VolumeX, ShieldCheck, Play, Pause } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Course } from '../types';
 
@@ -37,11 +37,8 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     const [hasUserInteraction, setHasUserInteraction] = useState(false);
     const isIOS = typeof window !== 'undefined' ? /iPad|iPhone|iPod/.test(navigator.userAgent) : false;
 
-    // Handle user interaction for iOS autoplay
     useEffect(() => {
-        const handleInteraction = () => {
-            setHasUserInteraction(true);
-        };
+        const handleInteraction = () => { setHasUserInteraction(true); };
         window.addEventListener('touchstart', handleInteraction);
         window.addEventListener('click', handleInteraction);
         return () => {
@@ -50,7 +47,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
         };
     }, []);
 
-    // --- CRASH FIX: Reset/Pause when inactive ---
     useEffect(() => {
         if (videoRef.current && !youtubeId) {
             if (isActive) {
@@ -62,29 +58,20 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
         }
     }, [isActive, youtubeId]);
 
-    // Special handling for iOS YouTube
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
             if (isActive) {
                 setTimeout(() => {
                     if (iframeRef.current?.contentWindow) {
                         if (isIOS && !hasUserInteraction) {
-                            // iOS requires user interaction before playing
+                             // Wait for interact
                         } else {
-                            iframeRef.current.contentWindow.postMessage(JSON.stringify({
-                                event: 'command',
-                                func: 'playVideo',
-                                args: ''
-                            }), '*');
+                            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: '' }), '*');
                         }
                     }
                 }, 500);
             } else {
-                iframeRef.current.contentWindow?.postMessage(JSON.stringify({
-                    event: 'command',
-                    func: 'pauseVideo',
-                    args: ''
-                }), '*');
+                iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }), '*');
             }
         }
     }, [isActive, youtubeId, hasUserInteraction, isIOS]);
@@ -92,23 +79,19 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     useEffect(() => {
         if (iframeRef.current && youtubeId) {
             const command = isMuted ? 'mute' : 'unMute';
-            iframeRef.current.contentWindow?.postMessage(JSON.stringify({
-                event: 'command',
-                func: command,
-                args: ''
-            }), '*');
+            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: command, args: '' }), '*');
         }
     }, [isMuted, youtubeId]);
 
-    // --- CRASH FIX: If not active, render a lightweight placeholder instead of the video ---
+    // --- CRASH FIX: Unmount heavy video players when not active ---
     if (!isActive) {
         return (
             <div className="w-full h-full relative bg-black flex items-center justify-center">
-                {/* Lightweight placeholder to keep layout stable */}
+                {/* Lightweight placeholder */}
                 <img 
                     src={youtubeId 
                         ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` 
-                        : 'https://via.placeholder.com/800x1600/000000/FFFFFF?text=Loading' // Or use item.media_url + '#t=0.1' if you can generate thumbnails
+                        : 'https://via.placeholder.com/800x1600/000000/FFFFFF?text=Loading'
                     }
                     className="w-full h-full object-cover opacity-50"
                     alt="Loading"
@@ -123,15 +106,8 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                 <div className="w-full h-full relative">
                     <div className="relative w-full h-full">
                         {isIOS && !hasUserInteraction ? (
-                            <div
-                                className="absolute inset-0 flex items-center justify-center cursor-pointer"
-                                onClick={() => setHasUserInteraction(true)}
-                            >
-                                <img
-                                    src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`}
-                                    className="w-full h-full object-cover"
-                                    alt="YouTube video"
-                                />
+                            <div className="absolute inset-0 flex items-center justify-center cursor-pointer" onClick={() => setHasUserInteraction(true)}>
+                                <img src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="YouTube video" />
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                     <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
                                         <div className="w-0 h-0 border-y-8 border-l-12 border-y-transparent border-l-white ml-2" />
@@ -178,97 +154,86 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   const [activeId, setActiveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null); // Added missing state
 
   useEffect(() => {
     const styleSheet = document.createElement("style");
     styleSheet.innerText = `
-        @keyframes slowZoom {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.05); }
-        }
-       
-        .animate-slow-zoom {
-            animation: slowZoom 20s infinite alternate ease-in-out;
-        }
-       
-        /* iOS Safari specific fixes */
-        @supports (-webkit-touch-callout: none) {
-            /* iOS specific styles */
-            .ios-full-height {
-                height: -webkit-fill-available !important;
-                min-height: -webkit-fill-available !important;
-            }
-           
-            img {
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-                user-select: none;
-            }
-           
-            /* Better image rendering on iOS */
-            .ios-image-render {
-                image-rendering: -webkit-optimize-contrast;
-                image-rendering: crisp-edges;
-            }
-        }
-       
-        /* Force hardware acceleration for smoother animations */
-        .hardware-accelerate {
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            perspective: 1000px;
-        }
-       
-        /* Full viewport height with fallback */
-        .full-vh {
-            height: 100vh;
-            min-height: 100vh;
-        }
-       
-        @supports (height: 100dvh) {
-            .full-vh {
-                height: 100dvh;
-                min-height: 100dvh;
-            }
-        }
-       
-        /* Ensure proper scroll on mobile */
-        .mobile-scroll-container {
-            -webkit-overflow-scrolling: touch;
-        }
+        @keyframes slowZoom { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        .animate-slow-zoom { animation: slowZoom 20s infinite alternate ease-in-out; }
+        @supports (-webkit-touch-callout: none) { .ios-full-height { height: -webkit-fill-available !important; min-height: -webkit-fill-available !important; } img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; } .ios-image-render { image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; } }
+        .hardware-accelerate { transform: translateZ(0); backface-visibility: hidden; perspective: 1000px; }
+        .full-vh { height: 100vh; min-height: 100vh; }
+        @supports (height: 100dvh) { .full-vh { height: 100dvh; min-height: 100dvh; } }
+        .mobile-scroll-container { -webkit-overflow-scrolling: touch; }
     `;
     document.head.appendChild(styleSheet);
-   
-    return () => {
-        document.head.removeChild(styleSheet);
-    };
+    return () => { document.head.removeChild(styleSheet); };
   }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       const { data: visualData } = await supabase.from('visual_feed').select('*').order('created_at', { ascending: false });
       const { data: courseData } = await supabase.from('courses').select('*').eq('is_published', true);
-      const visualItems: FeedItem[] = (visualData || []).map((v: any) => ({ id: `vis-${v.id}`, type: v.type, title: v.title, media_url: v.media_url, date: new Date(v.created_at).toLocaleDateString() }));
-      const courseAds: FeedItem[] = (courseData || []).map((c: Course) => ({ id: `ad-${c.id}`, type: 'course_ad', title: c.title, media_url: c.image, price: c.price, description: c.description, courseId: c.id }));
-     
-      // --- PATTERN FIX START ---
-      // Combine everything into one pool and shuffle it all together
-      // This ensures random order: Video, Ad, Video, Video, Ad, Fact...
-      let combinedPool = [...visualItems];
+      
+      const rawVisuals = (visualData || []).map((v: any) => ({ id: `vis-${v.id}`, type: v.type, title: v.title, media_url: v.media_url, date: new Date(v.created_at).toLocaleDateString() }));
+      const courseAds = (courseData || []).map((c: Course) => ({ id: `ad-${c.id}`, type: 'course_ad', title: c.title, media_url: c.image, price: c.price, description: c.description, courseId: c.id }));
+      
+      // Split into Pools
+      let videos = rawVisuals.filter((v: any) => v.type === 'video');
+      let facts = rawVisuals.filter((v: any) => v.type !== 'video');
+      let ads = [...courseAds];
 
-      // If we have ads, ensure they are in the pool, duplicating ads if visual items are scarce to keep feed long
-      // or just mixing them 1:1. Here we just mix them all.
-      // Assign unique IDs to ads so they can coexist with visuals
-      const mappedAds = courseAds.map((ad, index) => ({
-          ...ad,
-          id: `ad-instance-${index}-${ad.courseId}`
-      }));
+      // Shuffle pools initially
+      videos = shuffleArray(videos);
+      facts = shuffleArray(facts);
+      ads = shuffleArray(ads);
+
+      const mixedFeed: FeedItem[] = [];
       
-      combinedPool = [...combinedPool, ...mappedAds];
-      
-      // Shuffle the entire combined pool
-      const mixedFeed = shuffleArray(combinedPool);
-      // --- PATTERN FIX END ---
+      // --- ALGORITHM: 3-5 Videos | 2 Facts | 2 Ads ---
+      while (videos.length > 0) {
+          // 1. Add 3-5 Videos
+          const vCount = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
+          mixedFeed.push(...videos.splice(0, vCount));
+
+          // 2. Add 2 Facts (Non-consecutive check happens during shuffle or simple interleave here)
+          // We will pull 2 facts, if available. Recycling if needed.
+          const batchFacts: FeedItem[] = [];
+          for(let k=0; k<2; k++) {
+              if (facts.length === 0) facts = shuffleArray(rawVisuals.filter((v: any) => v.type !== 'video')); // Reload pool
+              batchFacts.push({ ...facts.pop(), id: `fact-${Date.now()}-${k}` } as FeedItem);
+          }
+
+          // 3. Add 2 Ads (Recycle if needed)
+          const batchAds: FeedItem[] = [];
+          for(let k=0; k<2; k++) {
+              if (ads.length === 0) ads = shuffleArray([...courseAds]); // Reload pool
+              batchAds.push({ ...ads.pop(), id: `ad-${Date.now()}-${k}` } as FeedItem);
+          }
+
+          // 4. Mix the Facts and Ads into the Video stream or append?
+          // User said: "3-5 videos then 2 facts then 2 ads" but "unpredictable".
+          // Let's shuffle the [2 Facts + 2 Ads] and append them AFTER the videos to maintain the "Group" feel.
+          // Constraint: Facts not consecutive.
+          
+          const nonVideoBatch = [...batchFacts, ...batchAds];
+          let shuffledNonVideos = shuffleArray(nonVideoBatch);
+
+          // Simple check to prevent consecutive facts in the small batch of 4
+          // If index 0 is fact and index 1 is fact, swap 1 with 2 (which must be an ad or end)
+          for(let i=0; i<shuffledNonVideos.length-1; i++) {
+              if (shuffledNonVideos[i].type !== 'course_ad' && shuffledNonVideos[i+1].type !== 'course_ad') {
+                  // Found two facts. Swap i+1 with an ad.
+                  const adIndex = shuffledNonVideos.findIndex(x => x.type === 'course_ad');
+                  if (adIndex !== -1 && adIndex !== i && adIndex !== i+1) {
+                      [shuffledNonVideos[i+1], shuffledNonVideos[adIndex]] = [shuffledNonVideos[adIndex], shuffledNonVideos[i+1]];
+                  }
+              }
+          }
+          
+          mixedFeed.push(...shuffledNonVideos);
+      }
 
       setFeed(mixedFeed);
       setDisplayedFeed([...mixedFeed]);
@@ -312,6 +277,14 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     return () => { if (observer.current) observer.current.disconnect(); };
   }, [loading, displayedFeed]);
 
+  // Added missing handleShare function to prevent error
+  const handleShare = (item: FeedItem) => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        setCopiedId(item.id);
+        setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
   if (loading) return <div className="h-full flex items-center justify-center text-slate-500 bg-black">Loading feed...</div>;
 
   return (
@@ -338,12 +311,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                       <img
                         src={item.media_url || 'https://via.placeholder.com/800'}
                         className="w-full h-full object-cover animate-slow-zoom ios-image-render"
-                        style={{
-                          objectFit: 'cover',
-                          width: '100%',
-                          height: '100%',
-                          display: 'block'
-                        }}
+                        style={{ objectFit: 'cover', width: '100%', height: '100%', display: 'block' }}
                         alt="Content"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -359,6 +327,12 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
                 </>
             )}
+            
+            {/* SIDEBAR ACTIONS (Empty per instruction) */}
+            <div className="absolute right-4 bottom-32 md:bottom-24 flex flex-col gap-6 items-center z-30">
+               {/* Share button logic kept for function but UI removed as requested previously */}
+            </div>
+
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 md:pb-8 z-20 flex flex-col pointer-events-none">
                 <div className="pointer-events-auto">
                     {item.type === 'course_ad' ? (
