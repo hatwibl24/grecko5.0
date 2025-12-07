@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ArrowUp, Plus, MessageSquare, X, Clock, Trash2, Menu, Loader2, Sparkles } from 'lucide-react';
 import { ChatMessage, User, Assignment, AcademicGoals, QuizResult, Course } from '../types';
 import { supabase } from '../lib/supabase';
-
 // Custom AI Icon
 const AiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -12,7 +11,6 @@ const AiIcon = ({ className }: { className?: string }) => (
     <circle cx="12" cy="12" r="3" fill="currentColor" />
   </svg>
 );
-
 const stripMarkdown = (text: string) => {
   if (!text) return '';
   return text.replace(/```[\w-]*\n([\s\S]*?)```/g, '$1')
@@ -20,7 +18,6 @@ const stripMarkdown = (text: string) => {
              .replace(/\*\*(.*?)\*\*/g, '$1')
              .trim();
 };
-
 const formatAiResponse = (text: string, onViewCourse: (id: string) => void) => {
   if (!text) return null;
   const regex = /\[([^\]]+)\]\(course:([^\)]+)\)/g;
@@ -45,7 +42,6 @@ const formatAiResponse = (text: string, onViewCourse: (id: string) => void) => {
   if (lastIndex < text.length) parts.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex)}</span>);
   return parts;
 };
-
 // --- ROTATING TEXT CONSTANTS ---
 const WELCOME_MESSAGES = [
   "Ready to improve your GPA?",
@@ -54,7 +50,6 @@ const WELCOME_MESSAGES = [
   "Time to master your courses.",
   "Ask me for a study plan."
 ];
-
 const SUGGESTION_POOL = [
   "How can I improve my GPA?",
   "Analyze my quiz performance.",
@@ -66,7 +61,6 @@ const SUGGESTION_POOL = [
   "What should I focus on today?",
   "Help me prepare for exams."
 ];
-
 interface AiMentorProps {
   user: User;
   assignments: Assignment[];
@@ -75,15 +69,12 @@ interface AiMentorProps {
   courses: Course[];
   onViewCourse: (courseId: string) => void;
 }
-
 interface ChatSession {
   id: string;
   title: string;
   updatedAt: Date;
 }
-
 const SUPABASE_PROJECT_URL = 'https://uopitdnufrnxkhhhdtxk.supabase.co';
-
 export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicGoals, quizResults, courses, onViewCourse }) => {
   const [input, setInput] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,13 +83,12 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  
+ 
   // Rotating Text State
   const [welcomeIndex, setWelcomeIndex] = useState(0);
   const [displayedSuggestions, setDisplayedSuggestions] = useState<string[]>([]);
-  
+ 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
   // Rotate Welcome Message
   useEffect(() => {
     const interval = setInterval(() => {
@@ -106,42 +96,35 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
     }, 3500);
     return () => clearInterval(interval);
   }, []);
-
   // Shuffle Suggestions
   useEffect(() => {
     const shuffleSuggestions = () => {
       const shuffled = [...SUGGESTION_POOL].sort(() => 0.5 - Math.random());
       setDisplayedSuggestions(shuffled.slice(0, 3));
     };
-    
+   
     shuffleSuggestions(); // Initial
     const interval = setInterval(shuffleSuggestions, 8000); // Change every 8s
-    
+   
     return () => clearInterval(interval);
   }, []);
-
   useEffect(() => {
     if (user.id) fetchSessions();
   }, [user.id]);
-
   // Scroll to bottom when messages change
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
   }, [currentMessages, isTyping, isLoadingHistory]);
-
   // Helper function to call Edge Function directly with Authorization header
   const invokeAiAssistant = async (payload: any) => {
     const { data: { session }, error: sessionError } = await (supabase.auth as any).getSession();
-
     if (sessionError || !session) {
       console.error("No active user session");
       throw new Error("You must be logged in to use the AI Assistant.");
     }
-
     const token = session.access_token;
-
     try {
       const response = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/ai-assistant`, {
         method: 'POST',
@@ -151,20 +134,17 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
         },
         body: JSON.stringify(payload),
       });
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Edge Function Error (Non-2xx):", errorText);
         throw new Error(`AI Error (${response.status}): ${errorText || 'Unknown error'}`);
       }
-
       return await response.json();
     } catch (error) {
       console.error("Network or Fetch Error:", error);
       throw error;
     }
   };
-
   const fetchSessions = async () => {
     try {
       const data = await invokeAiAssistant({ type: 'list_sessions' });
@@ -179,10 +159,9 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
       console.error("Error fetching sessions:", err);
     }
   };
-
   const loadSessionMessages = async (sessionId: string) => {
     setIsLoadingHistory(true);
-    setCurrentMessages([]); 
+    setCurrentMessages([]);
     try {
       const data = await invokeAiAssistant({ type: 'get_messages', session_id: sessionId });
       if (data && data.messages) {
@@ -199,7 +178,6 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
       setIsLoadingHistory(false);
     }
   };
-
   const handleSelectChat = (session: ChatSession) => {
     if (activeSessionId === session.id) {
         setSidebarOpen(false);
@@ -209,36 +187,31 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
     setSidebarOpen(false);
     loadSessionMessages(session.id);
   };
-
   const handleNewChat = () => {
     setActiveSessionId('new');
     setCurrentMessages([]);
     setSidebarOpen(false);
   };
-
   const handleDeleteChat = async (e: React.MouseEvent, sid: string) => {
     e.stopPropagation(); // Prevents clicking the row behind the button
-    
+   
     // CLICK TEST: Specific popup to verify button click
     if (!window.confirm("Are you sure you want to delete this chat?")) return;
-
     // 1. Optimistic Update (Remove it from screen immediately)
     const previousSessions = [...sessions];
     setSessions(prev => prev.filter(s => s.id !== sid));
-    
+   
     if (activeSessionId === sid) {
         handleNewChat();
     }
-
     try {
       // 2. Delete directly from Supabase (Cascade delete handles messages)
       const { error } = await supabase
         .from('chat_sessions')
         .delete()
         .eq('id', sid);
-
       if (error) throw error;
-      
+     
     } catch (err: any) {
       console.error("Delete failed:", err);
       // Revert UI if it failed
@@ -246,27 +219,25 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
       alert(`Failed to delete chat: ${err.message || 'Unknown error'}`);
     }
   };
-
   const handleSend = async (e?: React.FormEvent, textOverride?: string) => {
     if (e) e.preventDefault();
     const textToSend = textOverride || input;
     if (!textToSend.trim()) return;
-    
+   
     const tempId = Date.now().toString();
     const userMsg: ChatMessage = { id: tempId, role: 'user', text: textToSend, timestamp: new Date() };
     setCurrentMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
-
     try {
       const payload = {
             type: 'chat',
             session_id: activeSessionId === 'new' ? undefined : activeSessionId,
             prompt: textToSend,
-            history: currentMessages.slice(-6).map(m => ({ role: m.role, text: m.text })), 
+            history: currentMessages.slice(-6).map(m => ({ role: m.role, text: m.text })),
             context: {
-                user: { 
-                    name: user.name, 
+                user: {
+                    name: user.name,
                     grade: user.grade,
                     school: user.school,
                     bio: user.bio,
@@ -278,47 +249,41 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
                     completed: assignments.filter(a => a.completed).slice(0, 10).map(a => ({ title: a.title, course: a.course }))
                 },
                 quizResults: quizResults.slice(0, 10).map(q => ({ courseName: q.courseName, score: q.score, date: q.date })),
-                
+               
                 // --- UPDATE HERE ONLY: Pass extra course details ---
-                courses: courses.map(c => ({ 
-                    title: c.title, 
-                    id: c.id, 
-                    isOwned: c.isOwned, 
-                    price: c.price, 
-                    description: c.description 
+                courses: courses.map(c => ({
+                    title: c.title,
+                    id: c.id,
+                    isOwned: c.isOwned,
+                    price: c.price,
+                    description: c.description
                 }))
             }
       };
-
       const data = await invokeAiAssistant(payload);
       if (data.error) throw new Error(data.error);
-
       const aiResponseText = data.text || "I'm not sure how to respond.";
       const returnedSessionId = data.session_id;
-
       const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'ai', text: aiResponseText, timestamp: new Date() };
       setCurrentMessages(prev => [...prev, aiMsg]);
-
       if (activeSessionId === 'new' && returnedSessionId) {
         setActiveSessionId(returnedSessionId);
-        fetchSessions(); 
+        fetchSessions();
       }
-
     } catch (err: any) {
       console.error("Chat Failed:", err);
-      setCurrentMessages(prev => [...prev, { 
-        id: (Date.now() + 1).toString(), 
-        role: 'ai', 
-        text: `Error: ${err.message || 'Something went wrong.'}`, 
-        timestamp: new Date() 
+      setCurrentMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'ai',
+        text: `Error: ${err.message || 'Something went wrong.'}`,
+        timestamp: new Date()
       }]);
     } finally {
       setIsTyping(false);
     }
   };
-
   return (
-    <div className="flex flex-col h-full relative bg-black text-slate-200 font-sans selection:bg-slate-800 overflow-hidden">
+    <div className="flex flex-col h-full relative bg-black text-slate-200 font-sans selection:bg-slate-800 overflow-hidden pb-16 md:pb-0">
       {/* Sidebar */}
       <div className={`absolute top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-zinc-900/95 border-r border-zinc-800 z-50 transform transition-transform duration-300 p-4 flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between mb-6 pl-2">
@@ -336,8 +301,8 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
                 <div className="font-medium text-sm truncate">{session.title}</div>
                 <div className="text-xs text-slate-600 group-hover:text-slate-500 flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(session.updatedAt).toLocaleDateString()}</div>
               </div>
-              <button 
-                onClick={(e) => handleDeleteChat(e, session.id)} 
+              <button
+                onClick={(e) => handleDeleteChat(e, session.id)}
                 className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors z-10"
                 title="Delete Chat"
               >
@@ -347,13 +312,11 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
           ))}
         </div>
       </div>
-
       {/* Chat Window */}
       <div className="flex-none p-4 z-20 flex items-center bg-black/50 backdrop-blur-md border-b border-zinc-800">
         <button onClick={() => setSidebarOpen(true)} className="pointer-events-auto text-zinc-400 hover:text-white p-2 -ml-2 mb-2"><Menu className="w-6 h-6" /></button>
         <span className="ml-2 font-bold text-white mb-2">Grecko AI</span>
       </div>
-
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 scroll-smooth" ref={scrollContainerRef}>
         {isLoadingHistory ? (
             <div className="flex flex-col items-center justify-center h-full pt-20">
@@ -385,16 +348,15 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
           </div>
         )}
       </div>
-
       {/* Input */}
       <div className="flex-none p-4 md:p-6 bg-black border-t border-zinc-900 z-30">
         <div className="max-w-3xl mx-auto pointer-events-auto">
-          
+         
           {/* Rotating Suggestion Chips (Only visible when no messages) */}
           {currentMessages.length === 0 && (
             <div className="flex gap-2 overflow-x-auto pb-3 mb-2 no-scrollbar mask-gradient">
                 {displayedSuggestions.map((suggestion, idx) => (
-                    <button 
+                    <button
                       key={`${suggestion}-${idx}`}
                       onClick={() => handleSend(undefined, suggestion)}
                       className="whitespace-nowrap px-4 py-2 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-blue-500/50 rounded-full text-xs md:text-sm text-slate-300 hover:text-white transition-all animate-in fade-in zoom-in duration-300 flex items-center gap-2 backdrop-blur-sm"
@@ -405,7 +367,6 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
                 ))}
             </div>
           )}
-
           <form onSubmit={(e) => handleSend(e)} className="relative w-full">
             <div className="relative flex items-center bg-zinc-900 rounded-[26px] px-4 py-3 border border-zinc-800 transition-colors focus-within:border-zinc-700 shadow-xl">
               <input
