@@ -88,13 +88,13 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
             } else {
                 return;
             }
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
+            iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
         }
     }, [isActive, youtubeId, isPlayerReady, hasUserInteraction, isIOS, iframeRef]);
     useEffect(() => {
         if (iframeRef.current && youtubeId && isPlayerReady) {
             const func = isMuted ? 'mute' : 'unMute';
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
+            iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
         }
     }, [isMuted, youtubeId, isPlayerReady, iframeRef]);
     // --- CRASH FIX: Unmount heavy video players when not active ---
