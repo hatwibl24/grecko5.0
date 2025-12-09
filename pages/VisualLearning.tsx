@@ -2,14 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Share2, ChevronRight, Volume2, VolumeX, ShieldCheck, Play, Pause } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Course } from '../types';
-
 const getYoutubeId = (url: string) => {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
 };
-
 const shuffleArray = (array: any[]) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -17,7 +15,6 @@ const shuffleArray = (array: any[]) => {
   }
   return array;
 };
-
 interface FeedItem {
   id: string;
   type: 'fact' | 'video' | 'image' | 'course_ad';
@@ -29,14 +26,13 @@ interface FeedItem {
   author?: string;
   date?: string;
 }
-
 const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem, isActive: boolean, isMuted: boolean, toggleMute: () => void }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const youtubeId = getYoutubeId(item.media_url || '');
     const [hasUserInteraction, setHasUserInteraction] = useState(false);
+    const [isPlayerReady, setIsPlayerReady] = useState(false);
     const isIOS = typeof window !== 'undefined' ? /iPad|iPhone|iPod/.test(navigator.userAgent) : false;
-
     useEffect(() => {
         const handleInteraction = () => { setHasUserInteraction(true); };
         window.addEventListener('touchstart', handleInteraction);
@@ -46,51 +42,69 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
             window.removeEventListener('click', handleInteraction);
         };
     }, []);
-
     useEffect(() => {
         if (videoRef.current && !youtubeId) {
+            const video = videoRef.current;
             if (isActive) {
-                videoRef.current.currentTime = 0;
-                videoRef.current.play().catch(e => console.log("Autoplay blocked", e));
+                video.currentTime = 0;
+                const playVideo = () => {
+                    video.play().catch(e => console.log("Autoplay blocked", e));
+                };
+                if (video.readyState >= 2) {
+                    playVideo();
+                } else {
+                    video.addEventListener('canplay', playVideo, { once: true });
+                    return () => {
+                        video.removeEventListener('canplay', playVideo);
+                    };
+                }
             } else {
-                videoRef.current.pause();
+                video.pause();
             }
         }
     }, [isActive, youtubeId]);
-
     useEffect(() => {
-        if (iframeRef.current && youtubeId) {
-            if (isActive) {
-                setTimeout(() => {
-                    if (iframeRef.current?.contentWindow) {
-                        if (isIOS && !hasUserInteraction) {
-                             // Wait for interact
-                        } else {
-                            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: '' }), '*');
-                        }
-                    }
-                }, 500);
+        const handleYoutubeMessage = (event: MessageEvent) => {
+            if (event.origin !== 'https://www.youtube.com') return;
+            try {
+                const data = JSON.parse(event.data);
+                if (data.event === 'onReady') {
+                    setIsPlayerReady(true);
+                }
+            } catch {}
+        };
+        if (youtubeId && isActive) {
+            window.addEventListener('message', handleYoutubeMessage);
+            return () => window.removeEventListener('message', handleYoutubeMessage);
+        }
+    }, [youtubeId, isActive]);
+    useEffect(() => {
+        if (iframeRef.current && youtubeId && isPlayerReady) {
+            let func;
+            if (!isActive) {
+                func = 'pauseVideo';
+            } else if (!(isIOS && !hasUserInteraction)) {
+                func = 'playVideo';
             } else {
-                iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }), '*');
+                return;
             }
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
         }
-    }, [isActive, youtubeId, hasUserInteraction, isIOS]);
-
+    }, [isActive, youtubeId, isPlayerReady, hasUserInteraction, isIOS, iframeRef]);
     useEffect(() => {
-        if (iframeRef.current && youtubeId) {
-            const command = isMuted ? 'mute' : 'unMute';
-            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: command, args: '' }), '*');
+        if (iframeRef.current && youtubeId && isPlayerReady) {
+            const func = isMuted ? 'mute' : 'unMute';
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
         }
-    }, [isMuted, youtubeId]);
-
+    }, [isMuted, youtubeId, isPlayerReady, iframeRef]);
     // --- CRASH FIX: Unmount heavy video players when not active ---
     if (!isActive) {
         return (
             <div className="w-full h-full relative bg-black flex items-center justify-center">
                 {/* Lightweight placeholder */}
-                <img 
-                    src={youtubeId 
-                        ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` 
+                <img
+                    src={youtubeId
+                        ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`
                         : 'https://via.placeholder.com/800x1600/000000/FFFFFF?text=Loading'
                     }
                     className="w-full h-full object-cover opacity-50"
@@ -99,7 +113,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
             </div>
         );
     }
-
     return (
         <div className="w-full h-full relative bg-black flex items-center justify-center">
             {youtubeId ? (
@@ -117,7 +130,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                         ) : null}
                         <iframe
                             ref={iframeRef}
-                            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&autoplay=1&mute=${isMuted ? 1 : 0}&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0${isIOS ? '&playsinline=1' : ''}`}
+                            src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0${isIOS ? '&playsinline=1' : ''}`}
                             className={`absolute top-0 left-0 w-full h-full ${isIOS && !hasUserInteraction ? 'opacity-0' : 'opacity-100'}`}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen
@@ -134,6 +147,7 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                     muted={isMuted}
                     loop
                     playsInline
+                    preload="auto"
                 />
             )}
             <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/80" />
@@ -145,7 +159,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
         </div>
     );
 };
-
 export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ onNavigateToCourse }) => {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [displayedFeed, setDisplayedFeed] = useState<FeedItem[]>([]);
@@ -155,7 +168,6 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   const containerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null); // Added missing state
-
   useEffect(() => {
     const styleSheet = document.createElement("style");
     styleSheet.innerText = `
@@ -170,33 +182,29 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     document.head.appendChild(styleSheet);
     return () => { document.head.removeChild(styleSheet); };
   }, []);
-
   useEffect(() => {
     const fetchData = async () => {
       const { data: visualData } = await supabase.from('visual_feed').select('*').order('created_at', { ascending: false });
       const { data: courseData } = await supabase.from('courses').select('*').eq('is_published', true);
-      
+     
       const rawVisuals = (visualData || []).map((v: any) => ({ id: `vis-${v.id}`, type: v.type, title: v.title, media_url: v.media_url, date: new Date(v.created_at).toLocaleDateString() }));
       const courseAds = (courseData || []).map((c: Course) => ({ id: `ad-${c.id}`, type: 'course_ad', title: c.title, media_url: c.image, price: c.price, description: c.description, courseId: c.id }));
-      
+     
       // Split into Pools
       let videos = rawVisuals.filter((v: any) => v.type === 'video');
       let facts = rawVisuals.filter((v: any) => v.type !== 'video');
       let ads = [...courseAds];
-
       // Shuffle pools initially
       videos = shuffleArray(videos);
       facts = shuffleArray(facts);
       ads = shuffleArray(ads);
-
       const mixedFeed: FeedItem[] = [];
-      
+     
       // --- ALGORITHM: 3-5 Videos | 2 Facts | 2 Ads ---
       while (videos.length > 0) {
           // 1. Add 3-5 Videos
           const vCount = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
           mixedFeed.push(...videos.splice(0, vCount));
-
           // 2. Add 2 Facts (Non-consecutive check happens during shuffle or simple interleave here)
           // We will pull 2 facts, if available. Recycling if needed.
           const batchFacts: FeedItem[] = [];
@@ -204,22 +212,19 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
               if (facts.length === 0) facts = shuffleArray(rawVisuals.filter((v: any) => v.type !== 'video')); // Reload pool
               batchFacts.push({ ...facts.pop(), id: `fact-${Date.now()}-${k}` } as FeedItem);
           }
-
           // 3. Add 2 Ads (Recycle if needed)
           const batchAds: FeedItem[] = [];
           for(let k=0; k<2; k++) {
               if (ads.length === 0) ads = shuffleArray([...courseAds]); // Reload pool
               batchAds.push({ ...ads.pop(), id: `ad-${Date.now()}-${k}` } as FeedItem);
           }
-
           // 4. Mix the Facts and Ads into the Video stream or append?
           // User said: "3-5 videos then 2 facts then 2 ads" but "unpredictable".
           // Let's shuffle the [2 Facts + 2 Ads] and append them AFTER the videos to maintain the "Group" feel.
           // Constraint: Facts not consecutive.
-          
+         
           const nonVideoBatch = [...batchFacts, ...batchAds];
           let shuffledNonVideos = shuffleArray(nonVideoBatch);
-
           // Simple check to prevent consecutive facts in the small batch of 4
           // If index 0 is fact and index 1 is fact, swap 1 with 2 (which must be an ad or end)
           for(let i=0; i<shuffledNonVideos.length-1; i++) {
@@ -231,10 +236,9 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                   }
               }
           }
-          
+         
           mixedFeed.push(...shuffledNonVideos);
       }
-
       setFeed(mixedFeed);
       setDisplayedFeed([...mixedFeed]);
       if (mixedFeed.length > 0) setActiveId(mixedFeed[0].id);
@@ -242,7 +246,6 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     };
     fetchData();
   }, []);
-
   const handleScroll = useCallback(() => {
     if (!containerRef.current || feed.length === 0) return;
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
@@ -254,13 +257,11 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
       });
     }
   }, [feed]);
-
   useEffect(() => {
     const ref = containerRef.current;
     if (ref) ref.addEventListener('scroll', handleScroll);
     return () => { if (ref) ref.removeEventListener('scroll', handleScroll); };
   }, [handleScroll]);
-
   useEffect(() => {
     if (loading || !containerRef.current) return;
     if (observer.current) observer.current.disconnect();
@@ -276,7 +277,6 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     slides.forEach(slide => observer.current?.observe(slide));
     return () => { if (observer.current) observer.current.disconnect(); };
   }, [loading, displayedFeed]);
-
   // Added missing handleShare function to prevent error
   const handleShare = (item: FeedItem) => {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -284,9 +284,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
         setTimeout(() => setCopiedId(null), 2000);
     });
   };
-
   if (loading) return <div className="h-full flex items-center justify-center text-slate-500 bg-black">Loading feed...</div>;
-
   return (
     <div
       ref={containerRef}
@@ -327,12 +325,11 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 pointer-events-none" />
                 </>
             )}
-            
+           
             {/* SIDEBAR ACTIONS (Empty per instruction) */}
             <div className="absolute right-4 bottom-32 md:bottom-24 flex flex-col gap-6 items-center z-30">
                {/* Share button logic kept for function but UI removed as requested previously */}
             </div>
-
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 md:pb-8 z-20 flex flex-col pointer-events-none">
                 <div className="pointer-events-auto">
                     {item.type === 'course_ad' ? (
