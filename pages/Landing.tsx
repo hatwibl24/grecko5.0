@@ -15,12 +15,12 @@ interface LandingProps {
 
 /* ===================== 3D CORE ===================== */
 const BlueprintCore = ({ scroll }: { scroll: any }) => {
-  const meshRef = useRef<THREE.Mesh>(null!)
-  const groupRef = useRef<THREE.Group>(null!)
+  const meshRef = useRef<THREE.Mesh>(null)
+  const groupRef = useRef<THREE.Group>(null)
 
   useFrame((state) => {
-    const mesh = meshRef.current
-    const group = groupRef.current
+    const mesh = meshRef.current as THREE.Mesh
+    const group = groupRef.current as THREE.Group
     if (!mesh || !group) return
 
     const s = scroll.get()
