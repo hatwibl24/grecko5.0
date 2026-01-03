@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Canvas, useFrame, RootState } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera, Grid, Edges } from '@react-three/drei'
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion'
 import * as THREE from 'three'
@@ -14,12 +14,13 @@ interface LandingProps {
 }
 
 /* ===================== 3D CORE ===================== */
-
 const BlueprintCore = ({ scroll }: { scroll: any }) => {
-  const meshRef = useRef<THREE.Mesh>(null!)
-  const groupRef = useRef<THREE.Group>(null!)
+  const meshRef = useRef<THREE.Mesh | null>(null)
+  const groupRef = useRef<THREE.Group | null>(null)
 
-  useFrame((state: RootState) => {
+  useFrame((state) => {
+    if (!meshRef.current || !groupRef.current) return
+
     const s = scroll.get()
     meshRef.current.rotation.y += 0.005 + s * 0.04
     meshRef.current.rotation.x += 0.003
@@ -53,40 +54,31 @@ const BlueprintCore = ({ scroll }: { scroll: any }) => {
 }
 
 /* ===================== INFO SECTION ===================== */
+interface InfoSectionProps {
+  title: string
+  subtitle: string
+  details: string[]
+  progress: any
+  range: number[]
+  icon: React.ComponentType<any>
+}
 
-const InfoSection = ({
-  title,
-  subtitle,
-  details,
-  progress,
-  range,
-  icon: Icon,
-}: any) => {
+const InfoSection: React.FC<InfoSectionProps> = ({ title, subtitle, details, progress, range, icon: Icon }) => {
   const opacity = useTransform(progress, range, [0, 1, 1, 0])
   const y = useTransform(progress, range, [80, 0, 0, -80])
   const scale = useTransform(progress, range, [0.9, 1, 1, 0.9])
 
   return (
-    <motion.section
-      style={{ opacity, y, scale }}
-      className="h-screen flex flex-col justify-center items-center px-6 text-center"
-    >
+    <motion.section style={{ opacity, y, scale }} className="h-screen flex flex-col justify-center items-center px-6 text-center">
       <div className="mb-6 p-5 rounded-3xl bg-blue-600/10 border border-blue-400/20 backdrop-blur-xl">
         <Icon className="w-10 h-10 text-blue-400" />
       </div>
-
       <h2 className="text-5xl font-black text-white mb-4">{title}</h2>
       <p className="text-blue-200 text-xl max-w-xl mb-10">{subtitle}</p>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
-        {details.map((item: string, i: number) => (
-          <div
-            key={i}
-            className="bg-white/5 border border-white/10 p-6 rounded-[2rem]"
-          >
-            <div className="text-blue-500 font-mono text-[10px] mb-2">
-              Module {i + 1}
-            </div>
+        {details.map((item, i) => (
+          <div key={i} className="bg-white/5 border border-white/10 p-6 rounded-[2rem]">
+            <div className="text-blue-500 font-mono text-[10px] mb-2">Module {i + 1}</div>
             <p className="text-white text-sm">{item}</p>
           </div>
         ))}
@@ -96,12 +88,7 @@ const InfoSection = ({
 }
 
 /* ===================== LANDING ===================== */
-
-export const Landing: React.FC<LandingProps> = ({
-  onLoginWithEmail,
-  onSignupWithEmail,
-  onGoogleAuth,
-}) => {
+export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWithEmail, onGoogleAuth }) => {
   const [authModal, setAuthModal] = useState<'login' | 'signup' | null>(null)
   const [displayText, setDisplayText] = useState('')
   const [textIndex, setTextIndex] = useState(0)
@@ -111,12 +98,7 @@ export const Landing: React.FC<LandingProps> = ({
   const { scrollYProgress } = useScroll({ target: containerRef })
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 40, damping: 20 })
 
-  const TEXTS = [
-    'improve your grades',
-    'raise your GPA',
-    'master your courses',
-    'ace your exams',
-  ]
+  const TEXTS = ['improve your grades', 'raise your GPA', 'master your courses', 'ace your exams']
 
   useEffect(() => {
     const full = TEXTS[textIndex]
@@ -132,7 +114,6 @@ export const Landing: React.FC<LandingProps> = ({
         }
       }
     }, isDeleting ? 40 : 80)
-
     return () => clearTimeout(timer)
   }, [displayText, isDeleting, textIndex])
 
@@ -168,11 +149,7 @@ export const Landing: React.FC<LandingProps> = ({
           icon={Target}
           title="Predictive GPA Engineering"
           subtitle="Treat your degree like an engineering system."
-          details={[
-            'Live GPA blueprint',
-            'Exact grades required',
-            'Early failure detection',
-          ]}
+          details={['Live GPA blueprint', 'Exact grades required', 'Early failure detection']}
         />
 
         <InfoSection
@@ -190,11 +167,7 @@ export const Landing: React.FC<LandingProps> = ({
           icon={Brain}
           title="AI Mentor"
           subtitle="Context-aware academic guidance."
-          details={[
-            'Strategic advice',
-            'Performance analysis',
-            '24/7 mentorship',
-          ]}
+          details={['Strategic advice', 'Performance analysis', '24/7 mentorship']}
         />
 
         {/* CTA */}
@@ -221,24 +194,18 @@ export const Landing: React.FC<LandingProps> = ({
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-[#0a0a0c] p-10 rounded-3xl relative"
             >
-              <button
-                onClick={() => setAuthModal(null)}
-                className="absolute top-6 right-6"
-              >
+              <button onClick={() => setAuthModal(null)} className="absolute top-6 right-6">
                 <X />
               </button>
-
-              <button onClick={onGoogleAuth} className="w-full mb-4">
+              <button onClick={onGoogleAuth} className="w-full mb-4 flex items-center justify-center gap-2">
                 <Zap /> Google Auth
               </button>
-
               <button
                 onClick={() => {
-                  authModal === 'signup'
-                    ? onSignupWithEmail()
-                    : onLoginWithEmail()
+                  authModal === 'signup' ? onSignupWithEmail() : onLoginWithEmail()
                   setAuthModal(null)
                 }}
+                className="w-full flex items-center justify-center gap-2"
               >
                 <Mail /> Email Auth
               </button>
