@@ -1,19 +1,23 @@
 /// <reference types="vite/client" />
+/// <reference types="react-scripts" />
 
-import * as THREE from 'three'
+import '@react-three/fiber';
+import '@react-three/drei';
 
-// Extend JSX to include three/fiber elements
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      mesh: React.DetailedHTMLProps<any, any> & { ref?: React.Ref<THREE.Mesh> }
-      group: React.DetailedHTMLProps<any, any> & { ref?: React.Ref<THREE.Group> }
-      icosahedronGeometry: any
-      torusGeometry: any
-      meshStandardMaterial: any
-      meshBasicMaterial: any
-      ambientLight: any
-      pointLight: any
-    }
+declare module 'three' {
+  export class Mesh {}
+  export class Group {}
+}
+
+declare namespace JSX {
+  interface IntrinsicElements {
+    mesh: any;
+    group: any;
+    icosahedronGeometry: any;
+    torusGeometry: any;
+    meshStandardMaterial: any;
+    meshBasicMaterial: any;
+    ambientLight: any;
+    pointLight: any;
   }
 }
