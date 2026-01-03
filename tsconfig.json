@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "types": ["three", "@react-three/fiber", "@react-three/drei"]
   },
   "include": ["."],
   "exclude": ["node_modules", "src", "supabase/functions", "vite.config.ts"],
