@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera, Grid, Edges } from '@react-three/drei'
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion'
-import * as THREE from 'three'
 import { X, Mail, Brain, Target, Cpu, Zap, GraduationCap } from 'lucide-react'
 
 interface LandingProps {
@@ -15,8 +14,8 @@ interface LandingProps {
 
 /* ===================== 3D CORE ===================== */
 const BlueprintCore = ({ scroll }: { scroll: any }) => {
-  const meshRef = useRef<THREE.Mesh | null>(null)
-  const groupRef = useRef<THREE.Group | null>(null)
+  const meshRef = useRef<any>(null)
+  const groupRef = useRef<any>(null)
 
   useFrame((state) => {
     if (!meshRef.current || !groupRef.current) return
