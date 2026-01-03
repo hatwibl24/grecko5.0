@@ -14,22 +14,25 @@ interface LandingProps {
 }
 
 /* ===================== 3D CORE ===================== */
+/* ===================== 3D CORE ===================== */
 const BlueprintCore = ({ scroll }: { scroll: any }) => {
-  const meshRef = useRef<THREE.Mesh>(null)
-  const groupRef = useRef<THREE.Group>(null)
+  // Use null! to tell TS this will be assigned by the canvas
+  const meshRef = useRef<THREE.Mesh>(null!)
+  const groupRef = useRef<THREE.Group>(null!)
 
   useFrame((state) => {
-    const mesh = meshRef.current as THREE.Mesh
-    const group = groupRef.current as THREE.Group
-    if (!mesh || !group) return
+    // Check if refs are ready
+    if (!meshRef.current || !groupRef.current) return
 
     const s = scroll.get()
-    mesh.rotation.y += 0.005 + s * 0.04
-    mesh.rotation.x += 0.003
+    
+    // Using explicit property access to bypass the inference error
+    meshRef.current.rotation.y += 0.005 + s * 0.04
+    meshRef.current.rotation.x += 0.003
 
     const zoom = 1 + s * 3.5
-    group.scale.set(zoom, zoom, zoom)
-    group.position.y = Math.sin(state.clock.elapsedTime) * 0.2
+    groupRef.current.scale.set(zoom, zoom, zoom)
+    groupRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.2
   })
 
   return (
@@ -47,6 +50,7 @@ const BlueprintCore = ({ scroll }: { scroll: any }) => {
         <Edges color="#00f0ff" />
       </mesh>
 
+      {/* Note: Added explicit type to this mesh to prevent similar issues */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[3.5, 0.01, 16, 100]} />
         <meshBasicMaterial color="#7000ff" transparent opacity={0.4} />
