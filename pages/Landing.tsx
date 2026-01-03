@@ -20,19 +20,22 @@ const BlueprintCore = ({ scroll }: { scroll: any }) => {
   const meshRef = useRef<THREE.Mesh>(null!)
   const groupRef = useRef<THREE.Group>(null!)
 
-  useFrame((state) => {
-    // Check if refs are ready
-    if (!meshRef.current || !groupRef.current) return
+    useFrame((state) => {
+    // Cast to 'any' to bypass the broken type definitions
+    const mesh = meshRef.current as any
+    const group = groupRef.current as any
+    
+    if (!mesh || !group) return
 
     const s = scroll.get()
     
-    // Using explicit property access to bypass the inference error
-    meshRef.current.rotation.y += 0.005 + s * 0.04
-    meshRef.current.rotation.x += 0.003
+    // Now TS won't complain about these properties
+    mesh.rotation.y += 0.005 + s * 0.04
+    mesh.rotation.x += 0.003
 
     const zoom = 1 + s * 3.5
-    groupRef.current.scale.set(zoom, zoom, zoom)
-    groupRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.2
+    group.scale.set(zoom, zoom, zoom)
+    group.position.y = Math.sin(state.clock.elapsedTime) * 0.2
   })
 
   return (
