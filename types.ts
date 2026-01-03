@@ -1,3 +1,4 @@
+/* ===================== DOMAIN TYPES ===================== */
 
 export interface User {
   id: string;
@@ -81,3 +82,28 @@ export interface Notification {
 }
 
 export type PageRoute = 'auth' | 'dashboard' | 'courses' | 'reader' | 'study-tools' | 'mentor' | 'profile' | 'visual-learning' | 'notifications' | 'admin';
+
+/* ===================== REACT-THREE-FIBER JSX TYPES ===================== */
+
+/// <reference types="react" />
+/// <reference types="three" />
+
+import 'react'
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      mesh: any
+      group: any
+      perspectiveCamera: any
+      ambientLight: any
+      pointLight: any
+      icosahedronGeometry: any
+      torusGeometry: any
+      meshStandardMaterial: any
+      meshBasicMaterial: any
+      edges: any
+      grid: any
+    }
+  }
+}
