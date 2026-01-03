@@ -14,18 +14,22 @@ interface LandingProps {
 }
 
 /* ===================== 3D CORE ===================== */
-const BlueprintCore: React.FC<{ scroll: any }> = ({ scroll }) => {
+const BlueprintCore = ({ scroll }: { scroll: any }) => {
   const meshRef = useRef<THREE.Mesh>(null!)
   const groupRef = useRef<THREE.Group>(null!)
 
   useFrame((state) => {
+    const mesh = meshRef.current
+    const group = groupRef.current
+    if (!mesh || !group) return
+
     const s = scroll.get()
-    meshRef.current.rotation.y += 0.005 + s * 0.04
-    meshRef.current.rotation.x += 0.003
+    mesh.rotation.y += 0.005 + s * 0.04
+    mesh.rotation.x += 0.003
 
     const zoom = 1 + s * 3.5
-    groupRef.current.scale.set(zoom, zoom, zoom)
-    groupRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.2
+    group.scale.set(zoom, zoom, zoom)
+    group.position.y = Math.sin(state.clock.elapsedTime) * 0.2
   })
 
   return (
@@ -67,7 +71,10 @@ const InfoSection: React.FC<InfoSectionProps> = ({ title, subtitle, details, pro
   const scale = useTransform(progress, range, [0.9, 1, 1, 0.9])
 
   return (
-    <motion.section style={{ opacity, y, scale }} className="h-screen flex flex-col justify-center items-center px-6 text-center">
+    <motion.section
+      style={{ opacity, y, scale }}
+      className="h-screen flex flex-col justify-center items-center px-6 text-center"
+    >
       <div className="mb-6 p-5 rounded-3xl bg-blue-600/10 border border-blue-400/20 backdrop-blur-xl">
         <Icon className="w-10 h-10 text-blue-400" />
       </div>
