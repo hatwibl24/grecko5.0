@@ -4,7 +4,6 @@
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
@@ -12,6 +11,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    "skipLibCheck": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
@@ -20,7 +20,7 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["pages", "types", "global.d.ts"],
+  "include": ["pages", "components", "contexts", "lib", "types.ts", "global.d.ts", "three.d.ts"],
   "exclude": ["node_modules", "vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
