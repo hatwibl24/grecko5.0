@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { PerspectiveCamera, Grid, Float, Stars } from '@react-three/drei'
+import { PerspectiveCamera, Grid, Edges, Float } from '@react-three/drei'
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion'
 import * as THREE from 'three'
-import { X, Mail, ChevronRight, ChevronLeft, Target, Cpu, Brain, Zap, GraduationCap, TrendingUp, Activity } from 'lucide-react'
+import { X, Mail, ChevronRight, Target, Cpu, Brain, Zap } from 'lucide-react'
 
 interface LandingProps {
   onLoginWithEmail: () => void
@@ -13,7 +13,55 @@ interface LandingProps {
   onGoogleAuth: () => void
 }
 
-/* ===================== 1. REAL ANIMATED GRAPH COMPONENT ===================== */
+/* ===================== 1. ORIGINAL 3D BLUEPRINT CORE ===================== */
+const BlueprintCore = ({ scroll }: { scroll: any }) => {
+  const meshRef = useRef<THREE.Mesh>(null!)
+  const groupRef = useRef<THREE.Group>(null!)
+
+  useFrame((state) => {
+    const mesh = meshRef.current as any
+    const group = groupRef.current as any
+    if (!mesh || !group) return
+
+    const s = scroll.get()
+    
+    // Original rotation logic linked to scroll
+    mesh.rotation.y += 0.005 + s * 0.05
+    mesh.rotation.x += 0.003
+
+    // Dynamic Zoom based on scroll
+    const zoom = 1 + s * 2.5
+    group.scale.set(zoom, zoom, zoom)
+    group.position.y = Math.sin(state.clock.elapsedTime) * 0.1
+  })
+
+  return (
+    <group ref={groupRef} position={[0, 0, -5]}>
+      <Float speed={1.5} rotationIntensity={0.5} floatIntensity={0.5}>
+        <mesh ref={meshRef}>
+          <icosahedronGeometry args={[2, 1]} />
+          <meshStandardMaterial
+            color="#00f0ff"
+            wireframe
+            transparent
+            opacity={0.3}
+            emissive="#0044ff"
+            emissiveIntensity={4}
+          />
+          <Edges color="#00f0ff" />
+        </mesh>
+      </Float>
+
+      {/* Orbital Ring */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[3.8, 0.01, 16, 100]} />
+        <meshBasicMaterial color="#7000ff" transparent opacity={0.2} />
+      </mesh>
+    </group>
+  )
+}
+
+/* ===================== 2. REAL ANIMATED GRAPH COMPONENT ===================== */
 const LiveTrendGraph = () => {
   return (
     <div className="w-full h-48 bg-black/40 rounded-xl border border-blue-500/20 relative overflow-hidden flex items-end p-4">
@@ -47,19 +95,17 @@ const LiveTrendGraph = () => {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 0.5 }}
         transition={{ delay: 0.5, duration: 1.5 }}
-        className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent clip-path-custom"
+        className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent"
         style={{ clipPath: 'polygon(0 100%, 0% 100%, 100% 10%, 100% 100%)' }} 
       />
     </div>
   )
 }
 
-/* ===================== 2. TYPING TEXT EFFECT COMPONENT ===================== */
+/* ===================== 3. TYPING TEXT EFFECT COMPONENT ===================== */
 const TypingEffect = ({ text }: { text: string }) => {
   const [displayed, setDisplayed] = useState("")
   
-  // Reset when scrolled into view logic would go here, 
-  // but for simplicity we run on mount/viewport entry
   useEffect(() => {
     let index = 0
     const timer = setInterval(() => {
@@ -73,30 +119,15 @@ const TypingEffect = ({ text }: { text: string }) => {
   return <span>{displayed}<span className="animate-pulse">|</span></span>
 }
 
-/* ===================== 3. AMBIENT BACKGROUND (SUBTLE) ===================== */
-const BackgroundScene = () => {
-  return (
-    <group>
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
-        <mesh position={[4, -2, -10]} rotation={[0, 0, Math.PI / 4]}>
-          <torusGeometry args={[5, 0.1, 16, 100]} />
-          <meshBasicMaterial color="#1e40af" transparent opacity={0.2} />
-        </mesh>
-      </Float>
-    </group>
-  )
-}
-
-/* ===================== 4. REFACTORED VERTICAL SECTION ===================== */
+/* ===================== 4. VERTICAL SECTION (Fixed Layout) ===================== */
 const FeatureSection = ({ title, subtitle, icon: Icon, children, delay = 0 }: any) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: false, margin: "-20%" }}
+      viewport={{ once: false, margin: "-10%" }} // Re-triggers on scroll
       transition={{ duration: 0.8, delay }}
-      className="w-full max-w-2xl mx-auto mb-32 px-6 flex flex-col items-center text-center"
+      className="w-full max-w-2xl mx-auto mb-40 px-6 flex flex-col items-center text-center relative z-10"
     >
       <div className="mb-6 p-4 rounded-2xl bg-blue-500/10 border border-blue-400/20 backdrop-blur-xl shadow-[0_0_30px_rgba(59,130,246,0.2)]">
         <Icon className="w-10 h-10 text-blue-400" />
@@ -120,6 +151,11 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
   const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | 'use' | null>(null)
   
+  // 1. SCROLL HOOKS FOR 3D ENGINE
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: containerRef })
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 45, damping: 25 })
+
   // Hero Typing Logic
   const [displayText, setDisplayText] = useState('')
   const [textIndex, setTextIndex] = useState(0)
@@ -143,12 +179,12 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
     return () => clearTimeout(timer)
   }, [displayText, isDeleting, textIndex])
 
-  // Policy Content (Abbreviated for brevity, logic remains same)
-  const getPolicyContent = () => { /* ... Keep your existing policy text logic here ... */ return <div className="text-slate-300">Policy Content Loaded</div> };
-  const getPolicyTitle = () => { /* ... Keep your existing title logic here ... */ return "Policy" };
+  // Placeholder for policy content (Keeping logic, hiding text for brevity)
+  const getPolicyContent = () => <div className="text-slate-300">Policy Content Here...</div>;
+  const getPolicyTitle = () => "Policy";
 
   return (
-    <div className="bg-[#020205] min-h-screen relative overflow-x-hidden font-sans selection:bg-blue-500/30 pb-32">
+    <div ref={containerRef} className="bg-[#020205] min-h-screen relative overflow-x-hidden font-sans selection:bg-blue-500/30 pb-32">
       
       {/* 1. TOP HEADER (FIXED) */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-[#020205]/80 backdrop-blur-md border-b border-white/5">
@@ -161,12 +197,20 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </button>
       </header>
 
-      {/* 2. BACKGROUND 3D (Subtle & Fixed) */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      {/* 2. RESTORED 3D BACKGROUND (BLUEPRINT CORE) */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
         <Canvas>
           <PerspectiveCamera makeDefault position={[0, 0, 10]} />
           <ambientLight intensity={0.5} />
-          <BackgroundScene />
+          <pointLight position={[10, 10, 10]} intensity={2.5} />
+          <Grid 
+            infiniteGrid 
+            fadeDistance={50} 
+            position={[0, -2, 0]} 
+            cellColor="#0044ff" 
+            sectionColor="#00f0ff" 
+          />
+          <BlueprintCore scroll={smoothProgress} />
         </Canvas>
       </div>
 
@@ -329,7 +373,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </div>
       </div>
 
-      {/* 5. AUTH MODAL (Exact Reimplementation) */}
+      {/* 5. AUTH MODAL */}
       <AnimatePresence>
         {authModalMode && (
           <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -363,9 +407,43 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         )}
       </AnimatePresence>
       
-      {/* 6. POLICY MODAL (Same logic as before, just kept concise for this view) */}
-      {/* ... Insert your existing policy modal code here ... */}
+      {/* 6. POLICY MODAL (Full Screen Slide Up) */}
+      <AnimatePresence>
+        {activePolicy && (
+          <motion.div 
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[70] bg-[#0a0a0c] flex flex-col"
+          >
+            {/* Header */}
+            <div className="flex-none px-6 py-4 border-b border-white/10 flex items-center justify-between bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                     <button onClick={() => setActivePolicy(null)} className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors text-white">
+                        <ChevronRight className="w-6 h-6 rotate-180" />
+                     </button>
+                     <h2 className="text-xl font-bold text-white">{getPolicyTitle()}</h2>
+                </div>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8">
+                <div className="max-w-2xl mx-auto pb-12">
+                   {getPolicyContent()}
+                   <div className="mt-12 pt-8 border-t border-white/10">
+                        <button 
+                            onClick={() => setActivePolicy(null)}
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all"
+                        >
+                            I understand
+                        </button>
+                   </div>
+                </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
-
