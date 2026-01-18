@@ -13,21 +13,18 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 
-// Global PayPal Configuration (LIVE)
+// Global PayPal Configuration (UPDATED WITH NEW LIVE ID)
 const initialOptions = {
-    // 👇 LIVE Client ID
-    "clientId": "ATNc9BiWfYBCaZkYVeQSvA0vUMEk-0GHzeEO8mRsS0zOQV17hyoVqJDC2FHvfwOrliy6VHR8djR2kfYt",
+    "clientId": "AaujLBv8lMdwL39whBR3fTqoAmQasgBJuUEenc9sOH5PfA1XAehif-IMqPWMllk5YBxlPc4z7sKcw_EV",
     "currency": "USD",
     "intent": "capture",
-    // We removed 'components' and 'disable-funding' temporarily to prevent 400 errors 
-    // If you need them, add them back carefully later.
 };
 
 root.render(
   <React.StrictMode>
     <AuthProvider>
       <ToastProvider>
-        {/* We wrap the App in PayPal provider so it's available everywhere */}
+        {/* The provider now uses your verified new account ID */}
         <PayPalScriptProvider options={initialOptions}>
           <App />
         </PayPalScriptProvider>
