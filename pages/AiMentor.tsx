@@ -370,11 +370,12 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
                         className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-zinc-800 prose-li:marker:text-blue-500"
                         components={{
                             // Custom Link Handler for Courses
-                            a: ({ href, children }) => {
+                            a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
                                 if (href?.startsWith('course:')) {
                                     const courseId = href.split(':')[1];
                                     return (
                                         <button
+                                            type="button"
                                             onClick={() => onViewCourse(courseId)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1 my-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium border border-blue-500/20 transition-all transform hover:scale-[1.02]"
                                         >
