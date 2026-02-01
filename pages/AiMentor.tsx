@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   ArrowUp, 
-  Plus, 
   MessageSquare, 
   X, 
   Clock, 
@@ -83,16 +82,24 @@ const StreamableMarkdown = ({
   const indexRef = useRef(0);
   const wordsRef = useRef<string[]>([]);
 
+  // Update content immediately if streaming stops or content changes drastically
   useEffect(() => {
     if (!isStreaming) {
       setDisplayedContent(content);
-      return;
+      if (intervalRef.current) clearInterval(intervalRef.current);
     }
+  }, [content, isStreaming]);
+
+  useEffect(() => {
+    if (!isStreaming) return;
 
     // Initialize streaming
     wordsRef.current = content.split(/(?=[ \n])/); // Split preserving whitespace
-    indexRef.current = 0;
-    setDisplayedContent('');
+    // If we are continuing a stream, we don't reset indexRef to 0 unless content changed entirely
+    // For simplicity in this demo, we reset if displayedContent is empty
+    if (displayedContent === '') {
+        indexRef.current = 0;
+    }
 
     intervalRef.current = setInterval(() => {
       if (indexRef.current < wordsRef.current.length) {
@@ -102,7 +109,7 @@ const StreamableMarkdown = ({
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (onComplete) onComplete();
       }
-    }, 20); // Adjust speed here (lower = faster)
+    }, 20); 
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -139,6 +146,7 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
   // UI Refs
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const SUPABASE_PROJECT_URL = 'https://uopitdnufrnxkhhhdtxk.supabase.co'; // Ensure this matches your env
 
@@ -163,18 +171,12 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
     h1: ({children}: any) => <h1 className="text-2xl font-bold text-white mt-6 mb-4 pl-4 border-l-4 border-blue-500">{children}</h1>,
     h2: ({children}: any) => <h2 className="text-xl font-semibold text-zinc-100 mt-5 mb-3">{children}</h2>,
     
-    // 2. Lists -> Cards: 'ul' becomes a grid, 'li' becomes a card
-    ul: ({children}: any) => <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 my-4">{children}</ul>,
-    li: ({children}: any) => (
-      <li className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4 hover:border-blue-500/30 hover:bg-zinc-800/60 transition-all flex flex-col justify-center text-sm leading-relaxed shadow-sm">
-        <div className="flex items-start gap-2">
-          <span className="text-blue-500 mt-1">•</span>
-          <span className="text-zinc-300">{children}</span>
-        </div>
-      </li>
-    ),
+    // 2. Lists -> FIXED: Reverted to standard clean bullets (removed cards)
+    ul: ({children}: any) => <ul className="list-disc pl-5 space-y-2 my-4 text-zinc-300">{children}</ul>,
+    ol: ({children}: any) => <ol className="list-decimal pl-5 space-y-2 my-4 text-zinc-300">{children}</ol>,
+    li: ({children}: any) => <li className="pl-1 leading-relaxed">{children}</li>,
     
-    // 3. Tables: Wrapped in styled container
+    // 3. Tables: Wrapped in styled container (PRESERVED PREMIUM STYLE)
     table: ({children}: any) => (
       <div className="overflow-x-auto my-6 border border-zinc-800 rounded-xl bg-zinc-900/20">
         <table className="w-full text-left text-sm border-collapse">{children}</table>
@@ -210,6 +212,13 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
     if (user.id) fetchSessions();
   }, [user.id]);
 
+  // Persistence: Save current session to SessionStorage
+  useEffect(() => {
+    if (activeSessionId && currentMessages.length > 0) {
+      sessionStorage.setItem(`grecko_chat_${activeSessionId}`, JSON.stringify(currentMessages));
+    }
+  }, [currentMessages, activeSessionId]);
+
   // Auto-scroll to bottom on new content
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -218,11 +227,11 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
         behavior: 'smooth'
       });
     }
-  }, [currentMessages, isTyping, isStreaming, input]); // Added input to dependency to ensure view stays down when typing
+  }, [currentMessages, isTyping, isStreaming, input]);
 
   // --- API LOGIC ---
 
-  const invokeAiAssistant = useCallback(async (payload: any) => {
+  const invokeAiAssistant = useCallback(async (payload: any, signal?: AbortSignal) => {
     const { data: { session }, error } = await (supabase.auth as any).getSession();
     if (error || !session) throw new Error("Please log in.");
 
@@ -233,6 +242,7 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
         'Authorization': `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(payload),
+      signal // Attach signal for abort capability
     });
 
     if (!response.ok) throw new Error(await response.text());
@@ -253,17 +263,31 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
   };
 
   const loadSessionMessages = async (sessionId: string) => {
+    // 1. Try loading from cache first (Persistence)
+    const cached = sessionStorage.getItem(`grecko_chat_${sessionId}`);
+    if (cached) {
+      setCurrentMessages(JSON.parse(cached).map((m: any) => ({
+        ...m,
+        timestamp: new Date(m.timestamp)
+      })));
+      return; 
+    }
+
+    // 2. If not in cache, fetch from API
     setIsLoadingHistory(true);
     setCurrentMessages([]);
     try {
       const data = await invokeAiAssistant({ type: 'get_messages', session_id: sessionId });
       if (data?.messages) {
-        setCurrentMessages(data.messages.map((m: any) => ({
+        const mappedMessages = data.messages.map((m: any) => ({
           id: m.id.toString(),
           role: m.role,
           text: m.message,
           timestamp: new Date(m.created_at)
-        })));
+        }));
+        setCurrentMessages(mappedMessages);
+        // Save to cache immediately
+        sessionStorage.setItem(`grecko_chat_${sessionId}`, JSON.stringify(mappedMessages));
       }
     } catch (err) { console.error(err); } 
     finally { setIsLoadingHistory(false); }
@@ -290,6 +314,7 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
     
     // Optimistic UI update
     setSessions(prev => prev.filter(s => s.id !== sid));
+    sessionStorage.removeItem(`grecko_chat_${sid}`); // Clear cache
     if (activeSessionId === sid) handleNewChat();
     
     try {
@@ -298,6 +323,15 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
       console.error(err); 
       fetchSessions(); // Revert on error
     }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsTyping(false);
+    setIsStreaming(false);
   };
 
   const handleSend = async (e?: React.FormEvent, textOverride?: string) => {
@@ -310,6 +344,9 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
     setInput('');
     setIsTyping(true); // Show "Thinking..."
     setIsStreaming(false);
+
+    // Initialize AbortController
+    abortControllerRef.current = new AbortController();
 
     try {
       const payload = {
@@ -324,7 +361,8 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
         }
       };
 
-      const data = await invokeAiAssistant(payload);
+      const data = await invokeAiAssistant(payload, abortControllerRef.current.signal);
+      
       if (data.error) throw new Error(data.error);
 
       // Create AI message placeholder
@@ -338,6 +376,10 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
         fetchSessions();
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+         // Request cancelled by user
+         return;
+      }
       setCurrentMessages(prev => [...prev, { 
         id: Date.now().toString(), 
         role: 'ai', 
@@ -346,6 +388,7 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
       }]);
     } finally {
       setIsTyping(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -367,7 +410,8 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
             </div>
 
             <button onClick={handleNewChat} className="flex items-center gap-3 w-full p-3 bg-white text-black hover:bg-zinc-200 rounded-xl mb-6 transition-all font-semibold text-sm shadow-lg shadow-white/5 active:scale-95">
-                <Plus className="w-4 h-4" /> New Chat
+                {/* Replaced Plus with Chat Icon since we removed Plus from input */}
+                <MessageSquare className="w-4 h-4" /> New Chat
             </button>
 
             <div className="flex-1 overflow-y-auto space-y-1 pr-1">
@@ -401,14 +445,14 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="absolute inset-0 bg-black/60 z-40 backdrop-blur-sm" />}
 
-      {/* 2. HEADER */}
+      {/* 2. HEADER - FIXED: Cohesive Text */}
       <div className="flex-none h-16 px-4 flex items-center justify-between z-10 bg-gradient-to-b from-black via-black/90 to-transparent sticky top-0">
         <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-zinc-400 hover:text-white transition-colors">
                 <Menu className="w-6 h-6" />
             </button>
-            <span className="font-bold text-lg text-white tracking-tight flex items-center gap-2">
-                Grecko <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">AI</span>
+            <span className="font-bold text-lg text-white tracking-tight">
+                Grecko AI
             </span>
         </div>
       </div>
@@ -516,16 +560,14 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
       </div>
 
       {/* 4. INPUT AREA (Compact Capsule) */}
-      <div className="flex-none px-4 pb-6 pt-4 bg-gradient-to-t from-black via-black to-transparent z-20">
+      {/* FIXED: Added pb-24 mb-4 for mobile spacing */}
+      <div className="flex-none px-4 pb-24 mb-4 pt-4 bg-gradient-to-t from-black via-black to-transparent z-20">
         <div className="max-w-3xl mx-auto relative">
             <form 
                 onSubmit={(e) => handleSend(e)} 
                 className="group relative flex items-center gap-2 bg-zinc-900 rounded-full px-2 py-2 border border-zinc-800 shadow-2xl transition-all duration-300 focus-within:border-zinc-700 focus-within:ring-1 focus-within:ring-zinc-700 focus-within:shadow-blue-900/10 focus-within:bg-zinc-900/90"
             >
-                {/* Context / Attachment Placeholder */}
-                <button type="button" className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full transition-colors ml-1">
-                    <Plus className="w-5 h-5" />
-                </button>
+                {/* FIXED: Removed Plus Button */}
 
                 <input
                     ref={inputRef}
@@ -533,13 +575,18 @@ export const AiMentor: React.FC<AiMentorProps> = ({ user, assignments, academicG
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Ask anything..."
-                    className="flex-1 bg-transparent border-none outline-none text-white placeholder-zinc-500 text-[15px] h-full py-2 pl-1"
-                    disabled={isTyping}
+                    className="flex-1 bg-transparent border-none outline-none text-white placeholder-zinc-500 text-[15px] h-full py-2 pl-4"
+                    disabled={isTyping && !isStreaming} 
                 />
 
                 {isTyping || isStreaming ? (
-                    <button type="button" className="p-2 rounded-full bg-zinc-800 text-zinc-400 mr-1 animate-pulse cursor-default">
-                        <StopCircle className="w-5 h-5" />
+                    // FIXED: Stop button functionality
+                    <button 
+                        type="button" 
+                        onClick={handleStop}
+                        className="p-2 rounded-full bg-zinc-800 text-zinc-400 mr-1 hover:text-white hover:bg-red-500/20 transition-all"
+                    >
+                        <StopCircle className="w-5 h-5 animate-pulse" />
                     </button>
                 ) : (
                     <button
