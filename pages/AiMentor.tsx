@@ -97,7 +97,6 @@ const StreamableMarkdown = ({
 }) => {
   const [displayedContent, setDisplayedContent] = useState('');
   
-  // FIXED: Explicitly typed as number | null to satisfy window.setInterval return type
   const intervalRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
   
@@ -276,7 +275,7 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
     }));
   };
 
-  // --- PERSISTENCE LOGIC (Session Bug Fix) ---
+  // --- PERSISTENCE LOGIC ---
   useEffect(() => {
     const initializeSession = async () => {
       const savedSessionId = localStorage.getItem('grecko_active_session_id');
@@ -393,7 +392,6 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
   }, [invokeAiAssistant]);
 
   const loadSessionMessages = useCallback(async (sessionId: string) => {
-    // Try cache first
     const cached = getCache(sessionId);
     if (cached) {
       setCurrentMessages(cached);
@@ -486,7 +484,6 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
     setIsStreaming(false);
     setError(null);
     
-    // Small delay to ensure UI updates
     setTimeout(() => scrollToBottom(), 100);
 
     abortControllerRef.current = new AbortController();
@@ -518,7 +515,6 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         throw new Error(data.error);
       }
 
-      // CRITICAL: Stop typing indicator BEFORE adding message
       setIsTyping(false);
 
       const aiMsg: ChatMessage = { 
@@ -528,7 +524,6 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         timestamp: new Date() 
       };
       
-      // Add message immediately to UI
       setCurrentMessages(prev => {
         const updated = [...prev, aiMsg];
         if (activeSessionId !== 'new') {
@@ -537,16 +532,13 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         return updated;
       });
       
-      // Start streaming animation
       setIsStreaming(true);
 
-      // Update session if new
       if (activeSessionId === 'new' && data.session_id) {
         setActiveSessionId(data.session_id);
         fetchSessions();
       }
       
-      // Scroll after message appears
       setTimeout(() => scrollToBottom(), 100);
       
     } catch (err: any) {
@@ -571,12 +563,10 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
   // --- KEYBOARD SHORTCUTS ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + K for new chat
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         handleNewChat();
       }
-      // Escape to close sidebar
       if (e.key === 'Escape' && sidebarOpen) {
         setSidebarOpen(false);
       }
@@ -816,7 +806,7 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything..."
-              className="flex-1 bg-transparent text-white placeholder-zinc-500 text-sm sm:text-[15px] py-2 pl-3 sm:pl-4 
+              className="flex-1 bg-transparent text-white placeholder-zinc-500 text-base sm:text-sm py-2 pl-3 sm:pl-4 
                          focus:outline-none focus:ring-0 border-none"
               disabled={isTyping && !isStreaming}
               aria-label="Message input"
