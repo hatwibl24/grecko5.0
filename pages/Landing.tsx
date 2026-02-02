@@ -5,7 +5,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera, Grid, Float } from '@react-three/drei'
 import { motion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import * as THREE from 'three'
-import { X, ChevronRight, Target, Cpu, Brain, Zap, ChevronLeft, ScanLine, Activity } from 'lucide-react'
+import { X, Target, Cpu, Brain, Zap, Activity, ScanLine, Smartphone } from 'lucide-react'
 
 interface LandingProps {
   onLoginWithEmail: () => void
@@ -13,43 +13,40 @@ interface LandingProps {
   onGoogleAuth: () => void
 }
 
-/* ===================== 1. REFINED 3D BACKGROUND (SUBTLER) ===================== */
+/* ===================== 1. TS-SAFE 3D BACKGROUND ===================== */
+// FIXED: Switched to meshStandardMaterial to resolve TS2322 errors.
 const BlueprintCore = ({ scroll }: { scroll: any }) => {
-  const meshRef = useRef<THREE.Mesh>(null!)
-  const groupRef = useRef<THREE.Group>(null!)
+  const meshRef = useRef<THREE.Mesh>(null)
+  const groupRef = useRef<THREE.Group>(null)
 
   useFrame((state) => {
-    const mesh = meshRef.current as any
-    const group = groupRef.current as any
-    if (!mesh || !group) return
+    if (!meshRef.current || !groupRef.current) return
 
     const s = scroll.get()
     
-    // Slower, heavier rotation for a more "premium" feel
-    mesh.rotation.y = state.clock.elapsedTime * 0.05
-    mesh.rotation.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.1
+    // Smooth, heavy rotation for premium feel
+    meshRef.current.rotation.y = state.clock.elapsedTime * 0.05
+    meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.1
 
-    // Subtle breathing
+    // Subtle breathing effect based on scroll
     const zoom = 1 + s * 0.5
-    group.scale.set(zoom, zoom, zoom)
+    groupRef.current.scale.set(zoom, zoom, zoom)
   })
 
   return (
     <group ref={groupRef} position={[0, 0, -5]}>
       <Float speed={2} rotationIntensity={0.2} floatIntensity={0.2}>
-        {/* Replaced complex wireframe with a sleek "Glass Slab" aesthetic */}
         <mesh ref={meshRef} rotation={[0.5, 0.5, 0]}>
           <boxGeometry args={[3.5, 2, 0.1]} />
-          <meshPhysicalMaterial 
-            color="#111" 
+          <meshStandardMaterial 
+            color="#111111"
             roughness={0.1}
             metalness={0.8}
-            transparent
+            transparent={true}
             opacity={0.3}
-            clearcoat={1}
-            wireframe={true} // Kept wireframe but dark/subtle
-            emissive="#333"
-            emissiveIntensity={0.1}
+            wireframe={true}
+            emissive="#222222"
+            emissiveIntensity={0.2}
           />
         </mesh>
       </Float>
@@ -57,7 +54,7 @@ const BlueprintCore = ({ scroll }: { scroll: any }) => {
   )
 }
 
-/* ===================== 2. GRAPH COMPONENT (KEPT AS REQUESTED) ===================== */
+/* ===================== 2. GRAPH COMPONENT ===================== */
 const LiveTrendGraph = () => {
   return (
     <div className="w-full h-48 bg-black/40 rounded-xl border border-white/10 relative overflow-hidden flex items-end p-4">
@@ -95,9 +92,8 @@ const LiveTrendGraph = () => {
   )
 }
 
-/* ===================== 3. NEW: MEMORY HEATMAP (MASTERY) ===================== */
+/* ===================== 3. MEMORY HEATMAP (MASTERY) ===================== */
 const MasteryHeatmap = () => {
-  // Generates a grid of "memory blocks" that pulse to simulate active recall
   return (
     <div className="w-full bg-[#050505] rounded-xl border border-white/10 p-6 relative overflow-hidden">
       <div className="flex justify-between items-center mb-6">
@@ -108,15 +104,14 @@ const MasteryHeatmap = () => {
         <span className="text-emerald-400 text-sm font-bold">92% Optimal</span>
       </div>
 
-      {/* The Grid */}
       <div className="grid grid-cols-8 gap-1.5 md:gap-2">
         {Array.from({ length: 32 }).map((_, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0.2, scale: 0.9 }}
             whileInView={{ 
-              opacity: [0.1, 0.5, 0.2], // Breathing effect
-              backgroundColor: i % 4 === 0 ? '#34d399' : '#ffffff', // Mix of white and emerald
+              opacity: [0.1, 0.5, 0.2], 
+              backgroundColor: i % 4 === 0 ? '#34d399' : '#ffffff', 
             }}
             transition={{ 
               duration: Math.random() * 2 + 1.5, 
@@ -136,7 +131,7 @@ const MasteryHeatmap = () => {
   )
 }
 
-/* ===================== 4. NEW: TACTICAL SCANNER (AI MENTOR) ===================== */
+/* ===================== 4. TACTICAL SCANNER (AI MENTOR) ===================== */
 const TacticalScanner = () => {
   return (
     <div className="w-full h-64 bg-[#050505] rounded-xl border border-white/10 relative overflow-hidden group">
@@ -200,24 +195,7 @@ const TacticalScanner = () => {
   )
 }
 
-/* ===================== TYPING EFFECT (Refined) ===================== */
-const TypingEffect = ({ text }: { text: string }) => {
-  const [displayed, setDisplayed] = useState("")
-  
-  useEffect(() => {
-    let index = 0
-    const timer = setInterval(() => {
-      setDisplayed(text.slice(0, index + 1))
-      index++
-      if (index > text.length) clearInterval(timer)
-    }, 30)
-    return () => clearInterval(timer)
-  }, [text])
-
-  return <span className="font-mono">{displayed}<span className="animate-pulse ml-1">_</span></span>
-}
-
-/* ===================== VERTICAL SECTION (Fixed Layout) ===================== */
+/* ===================== 5. FEATURE SECTION LAYOUT ===================== */
 const FeatureSection = ({ title, subtitle, icon: Icon, children, delay = 0 }: any) => {
   return (
     <motion.div 
@@ -227,7 +205,6 @@ const FeatureSection = ({ title, subtitle, icon: Icon, children, delay = 0 }: an
       transition={{ duration: 0.8, delay }}
       className="w-full max-w-2xl mx-auto mb-40 px-6 flex flex-col relative z-10"
     >
-      {/* Header aligned left for 'Premium' feel */}
       <div className="flex items-start gap-4 mb-8">
           <div className="p-3 rounded-xl bg-white/5 border border-white/10">
             <Icon className="w-6 h-6 text-white" />
@@ -240,7 +217,6 @@ const FeatureSection = ({ title, subtitle, icon: Icon, children, delay = 0 }: an
           </div>
       </div>
 
-      {/* VISUAL CONTAINER */}
       <div className="w-full transform transition-all duration-700 hover:scale-[1.01]">
         {children}
       </div>
@@ -248,16 +224,15 @@ const FeatureSection = ({ title, subtitle, icon: Icon, children, delay = 0 }: an
   )
 }
 
-/* ===================== MAIN COMPONENT ===================== */
+/* ===================== MAIN LANDING PAGE ===================== */
 export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWithEmail, onGoogleAuth }) => {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
-  const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | 'use' | null>(null)
   
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: containerRef })
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 45, damping: 25 })
 
-  // Hero Typing Logic
+  // Typing Logic
   const [displayText, setDisplayText] = useState('')
   const [textIndex, setTextIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -280,16 +255,10 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
     return () => clearTimeout(timer)
   }, [displayText, isDeleting, textIndex])
 
-  // --- Policy Content (Kept as plain text for brevity in this focused file) ---
-  const getPolicyContent = () => {
-    // ... (Keep your original policy text here, strictly unstyled/simple if needed, or pass it in)
-    return <div className="text-white/60">Policy details here...</div> 
-  }
-
   return (
     <div ref={containerRef} className="bg-[#000] min-h-screen relative overflow-x-hidden font-sans selection:bg-white/20 pb-32">
       
-      {/* 1. TOP HEADER (Minimal) */}
+      {/* HEADER */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-black/80 backdrop-blur-md border-b border-white/5">
         <div className="text-xl font-bold text-white tracking-tight">Grecko.</div>
         <button 
@@ -300,7 +269,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </button>
       </header>
 
-      {/* 2. BACKGROUND */}
+      {/* 3D CANVAS BACKGROUND */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Canvas>
           <PerspectiveCamera makeDefault position={[0, 0, 10]} />
@@ -318,10 +287,10 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </Canvas>
       </div>
 
-      {/* 3. SCROLL CONTENT */}
+      {/* SCROLLABLE CONTENT */}
       <div className="relative z-10 pt-32">
         
-        {/* HERO (Clean & Bold) */}
+        {/* HERO */}
         <section className="min-h-[85vh] flex flex-col justify-center items-center text-center px-4 mb-20">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{duration: 0.8}}>
             <h1 className="text-[12vw] md:text-[8vw] font-bold text-white leading-none tracking-tighter mb-6 opacity-90">
@@ -339,7 +308,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </motion.div>
         </section>
 
-        {/* SECTION 1: PREDICTIVE GPA (Graph) */}
+        {/* SECTION 1: PREDICTIVE GPA */}
         <FeatureSection 
           title="Predictive GPA"
           subtitle="Visualize the exact mathematical path to your 4.0 target."
@@ -360,7 +329,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </div>
         </FeatureSection>
 
-        {/* SECTION 2: AUTOMATED MASTERY (New Heatmap) */}
+        {/* SECTION 2: AUTOMATED MASTERY */}
         <FeatureSection 
           title="Automated Mastery"
           subtitle="Adaptive retention tracking. We map exactly what you know and what you're losing."
@@ -371,7 +340,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </div>
         </FeatureSection>
 
-        {/* SECTION 3: AI MENTOR (New Scanner) */}
+        {/* SECTION 3: TACTICAL AI */}
         <FeatureSection 
           title="Tactical AI"
           subtitle="Strategic analysis of your coursework. It finds weaknesses before the exam does."
@@ -382,7 +351,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </div>
         </FeatureSection>
         
-        {/* FOOTER CTA */}
+        {/* DESKTOP FOOTER */}
         <div className="hidden md:flex flex-col items-center justify-center py-32 px-4 text-center z-10 relative border-t border-white/5 bg-black">
              <div className="max-w-xl w-full">
                 <h2 className="text-3xl font-bold text-white mb-6 tracking-tight">Serious about your grades?</h2>
@@ -396,7 +365,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </div>
       </div>
 
-      {/* MOBILE FLOATING CTA */}
+      {/* MOBILE FLOATING BUTTON */}
       <div className="fixed bottom-0 left-0 w-full z-40 p-6 pointer-events-none flex justify-center md:hidden">
          <motion.button 
              initial={{ y: 50, opacity: 0 }}
