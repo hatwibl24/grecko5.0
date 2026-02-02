@@ -483,7 +483,9 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
     setIsTyping(true);
     setIsStreaming(false);
     setError(null);
-    scrollToBottom();
+    
+    // Small delay to ensure UI updates
+    setTimeout(() => scrollToBottom(), 100);
 
     abortControllerRef.current = new AbortController();
 
@@ -514,6 +516,9 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         throw new Error(data.error);
       }
 
+      // CRITICAL: Stop typing indicator BEFORE adding message
+      setIsTyping(false);
+
       const aiMsg: ChatMessage = { 
         id: (Date.now() + 1).toString(), 
         role: 'ai', 
@@ -521,6 +526,7 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         timestamp: new Date() 
       };
       
+      // Add message immediately to UI
       setCurrentMessages(prev => {
         const updated = [...prev, aiMsg];
         if (activeSessionId !== 'new') {
@@ -529,13 +535,22 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         return updated;
       });
       
+      // Start streaming animation
       setIsStreaming(true);
 
+      // Update session if new
       if (activeSessionId === 'new' && data.session_id) {
         setActiveSessionId(data.session_id);
         fetchSessions();
       }
+      
+      // Scroll after message appears
+      setTimeout(() => scrollToBottom(), 100);
+      
     } catch (err: any) {
+      setIsTyping(false);
+      setIsStreaming(false);
+      
       if (err.name !== 'AbortError') {
         const errorMsg = err.message || "Connection error. Please try again.";
         setError(errorMsg);
@@ -547,7 +562,6 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         }]);
       }
     } finally {
-      setIsTyping(false);
       abortControllerRef.current = null;
     }
   }, [input, activeSessionId, currentMessages, user, filteredAssignments, mappedCourses, invokeAiAssistant, fetchSessions, scrollToBottom]);
@@ -773,11 +787,14 @@ const AiMentorComponent: React.FC<AiMentorProps> = ({
         </div>
       </div>
 
-      {/* SCROLL TO BOTTOM BUTTON */}
+      {/* SCROLL TO BOTTOM BUTTON - CENTERED */}
       {showScrollButton && (
         <button 
           onClick={() => scrollToBottom()}
-          className="absolute bottom-28 sm:bottom-24 right-4 sm:right-6 p-2.5 sm:p-3 bg-zinc-800/90 backdrop-blur border border-zinc-700 rounded-full text-zinc-300 shadow-xl hover:bg-zinc-700 hover:text-white transition-all z-30 animate-in fade-in zoom-in"
+          className="fixed bottom-32 sm:bottom-36 left-1/2 -translate-x-1/2 
+                     p-2.5 sm:p-3 bg-zinc-800/90 backdrop-blur border border-zinc-700 
+                     rounded-full text-zinc-300 shadow-xl hover:bg-zinc-700 
+                     hover:text-white transition-all z-30 animate-in fade-in zoom-in"
           aria-label="Scroll to bottom"
         >
           <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5" />
