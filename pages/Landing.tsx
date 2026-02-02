@@ -5,7 +5,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera, Grid, Float } from '@react-three/drei'
 import { motion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import * as THREE from 'three'
-import { X, Target, Cpu, Brain, Zap, Activity, ScanLine, Smartphone } from 'lucide-react'
+import { X, Target, Cpu, Brain, Zap, Activity } from 'lucide-react'
 
 interface LandingProps {
   onLoginWithEmail: () => void
@@ -13,11 +13,12 @@ interface LandingProps {
   onGoogleAuth: () => void
 }
 
-/* ===================== 1. TS-SAFE 3D BACKGROUND ===================== */
-// FIXED: Switched to meshStandardMaterial to resolve TS2322 errors.
+/* ===================== 1. BUILD-SAFE 3D BACKGROUND ===================== */
 const BlueprintCore = ({ scroll }: { scroll: any }) => {
-  const meshRef = useRef<THREE.Mesh>(null)
-  const groupRef = useRef<THREE.Group>(null)
+  // Using 'any' for the ref type here is the "Nuclear Option" to ensure 
+  // the build never fails on Three.js property lookups.
+  const meshRef = useRef<any>(null)
+  const groupRef = useRef<any>(null)
 
   useFrame((state) => {
     if (!meshRef.current || !groupRef.current) return
@@ -54,7 +55,7 @@ const BlueprintCore = ({ scroll }: { scroll: any }) => {
   )
 }
 
-/* ===================== 2. GRAPH COMPONENT ===================== */
+/* ===================== 2. DATA GRAPH ===================== */
 const LiveTrendGraph = () => {
   return (
     <div className="w-full h-48 bg-black/40 rounded-xl border border-white/10 relative overflow-hidden flex items-end p-4">
@@ -71,12 +72,7 @@ const LiveTrendGraph = () => {
           whileInView={{ pathLength: 1 }}
           transition={{ duration: 2, ease: "easeInOut" }}
         />
-        <motion.circle 
-            cx="100" cy="5" r="3" fill="#fff"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-        >
+        <motion.circle cx="100" cy="5" r="3" fill="#fff">
             <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
         </motion.circle>
       </svg>
@@ -92,7 +88,7 @@ const LiveTrendGraph = () => {
   )
 }
 
-/* ===================== 3. MEMORY HEATMAP (MASTERY) ===================== */
+/* ===================== 3. MEMORY HEATMAP (REPLACES GENERIC BARS) ===================== */
 const MasteryHeatmap = () => {
   return (
     <div className="w-full bg-[#050505] rounded-xl border border-white/10 p-6 relative overflow-hidden">
@@ -118,113 +114,81 @@ const MasteryHeatmap = () => {
               repeat: Infinity, 
               delay: i * 0.05 
             }}
-            className="aspect-square rounded-[2px] bg-white/10"
+            className="aspect-square rounded-[1px] bg-white/10"
           />
         ))}
       </div>
-
-      <div className="mt-6 flex items-center justify-between text-[10px] text-white/30 font-mono">
-        <span>CHEM 101</span>
-        <span>LAST SYNC: 2M AGO</span>
-      </div>
     </div>
   )
 }
 
-/* ===================== 4. TACTICAL SCANNER (AI MENTOR) ===================== */
+/* ===================== 4. TACTICAL SCANNER (REPLACES CHAT BUBBLES) ===================== */
 const TacticalScanner = () => {
   return (
-    <div className="w-full h-64 bg-[#050505] rounded-xl border border-white/10 relative overflow-hidden group">
-        {/* Background "Document" Text */}
-        <div className="absolute inset-0 p-6 opacity-30 select-none pointer-events-none filter blur-[1px]">
-            <p className="text-[10px] text-justify leading-relaxed text-white font-mono">
-                The reaction kinetics suggested a first-order dependency on substrate concentration. 
-                However, deviations at high molarity indicate enzyme saturation. 
-                To optimize the outcome, we must reconsider the thermal coefficients...
-                (Data corrupted)... recalculating trajectory... 
-                academic performance index indicates a 14% drop in output efficiency.
-                Recommended course of action: immediate review of Unit 4.
-            </p>
-            <p className="text-[10px] text-justify leading-relaxed text-white font-mono mt-4">
-               TARGET GPA: 4.0 // CURRENT STATUS: AT RISK
-               MISSING ASSIGNMENTS: 0
-               UPCOMING EXAMS: 2
+    <div className="w-full h-64 bg-[#050505] rounded-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute inset-0 p-6 opacity-20 filter blur-[0.5px]">
+            <p className="text-[9px] text-justify leading-relaxed text-white font-mono uppercase tracking-tighter">
+                Analysis: Organic Chemistry II. Current trajectory suggests 74% retention of carboxylic acid derivatives. 
+                Anomaly detected in week 4 metabolic pathways. Adjusting focus... 
+                Recalculating study intervals... Optimal session: 45m.
+                API status: Active. GPA forecast: 3.94.
             </p>
         </div>
 
-        {/* The Scanning Bar */}
+        {/* The Scanning Line */}
         <motion.div 
-            className="absolute top-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.8)] z-20"
+            className="absolute top-0 left-0 w-full h-[1px] bg-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.5)] z-20"
             animate={{ top: ["0%", "100%"] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
         />
         
-        {/* The "Clear" Zone (Revealed by scanner) */}
-        <motion.div 
-            className="absolute inset-0 p-6 z-10 bg-black/50"
-            style={{ 
-                maskImage: 'linear-gradient(to bottom, transparent, black 40%, transparent)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent 40%, black 50%, transparent 60%)'
-            }}
-            animate={{ WebkitMaskPositionY: ["-100%", "200%"] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        >
-             {/* This layer reveals the text cleanly as the bar passes */}
-        </motion.div>
-
-        {/* Pop-up Insights */}
-        <div className="absolute top-1/2 right-4 -translate-y-1/2 flex flex-col gap-2 items-end">
+        <div className="absolute bottom-4 left-4 right-4 flex gap-2">
             <motion.div 
-                initial={{ x: 20, opacity: 0 }}
-                whileInView={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1, duration: 0.5 }}
-                className="bg-blue-500/10 border border-blue-500/50 px-3 py-2 rounded text-[10px] text-blue-200 font-mono backdrop-blur-md"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                className="bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded text-[10px] text-blue-200 font-mono backdrop-blur-sm"
             >
-                ⚠️ Weakness Detected: Unit 4
+                [SCANNING_CURVE]
             </motion.div>
             <motion.div 
-                initial={{ x: 20, opacity: 0 }}
-                whileInView={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.5, duration: 0.5 }}
-                className="bg-white/10 border border-white/20 px-3 py-2 rounded text-[10px] text-white font-mono backdrop-blur-md"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="bg-white/5 border border-white/10 px-3 py-1.5 rounded text-[10px] text-white/70 font-mono backdrop-blur-sm"
             >
-                Review Strategy Generated
+                INSIGHT_READY
             </motion.div>
         </div>
     </div>
   )
 }
 
-/* ===================== 5. FEATURE SECTION LAYOUT ===================== */
-const FeatureSection = ({ title, subtitle, icon: Icon, children, delay = 0 }: any) => {
+/* ===================== 5. FEATURE SECTION WRAPPER ===================== */
+const FeatureSection = ({ title, subtitle, icon: Icon, children }: any) => {
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: false, margin: "-15%" }}
-      transition={{ duration: 0.8, delay }}
-      className="w-full max-w-2xl mx-auto mb-40 px-6 flex flex-col relative z-10"
+      viewport={{ once: true }}
+      className="w-full max-w-2xl mx-auto mb-32 px-6 flex flex-col relative z-10"
     >
-      <div className="flex items-start gap-4 mb-8">
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-            <Icon className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-4 mb-8">
+          <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
+            <Icon className="w-5 h-5 text-white/80" />
           </div>
-          <div>
-              <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">{title}</h2>
-              <p className="text-white/60 text-lg leading-relaxed max-w-md font-light">
-                {subtitle}
-              </p>
-          </div>
+          <h2 className="text-2xl font-semibold text-white tracking-tight">{title}</h2>
       </div>
-
-      <div className="w-full transform transition-all duration-700 hover:scale-[1.01]">
+      <p className="text-white/40 text-base mb-8 font-light leading-relaxed">
+        {subtitle}
+      </p>
+      <div className="w-full bg-[#080808] border border-white/5 rounded-2xl p-1 overflow-hidden">
         {children}
       </div>
     </motion.div>
   )
 }
 
-/* ===================== MAIN LANDING PAGE ===================== */
+/* ===================== MAIN COMPONENT ===================== */
 export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWithEmail, onGoogleAuth }) => {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
   
@@ -251,159 +215,117 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           setTextIndex((i) => (i + 1) % TEXTS.length)
         }
       }
-    }, isDeleting ? 40 : 80)
+    }, isDeleting ? 30 : 60)
     return () => clearTimeout(timer)
   }, [displayText, isDeleting, textIndex])
 
   return (
-    <div ref={containerRef} className="bg-[#000] min-h-screen relative overflow-x-hidden font-sans selection:bg-white/20 pb-32">
+    <div ref={containerRef} className="bg-[#000] min-h-screen relative overflow-x-hidden font-sans selection:bg-white/20">
       
       {/* HEADER */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-black/80 backdrop-blur-md border-b border-white/5">
-        <div className="text-xl font-bold text-white tracking-tight">Grecko.</div>
+      <header className="fixed top-0 left-0 w-full z-50 px-8 py-6 flex justify-between items-center bg-black/40 backdrop-blur-xl">
+        <div className="text-lg font-bold text-white tracking-tighter">GRECKO.</div>
         <button 
           onClick={() => setAuthModalMode('login')}
-          className="text-xs font-medium text-white hover:bg-white/10 transition-colors px-4 py-2 rounded-full border border-white/10"
+          className="text-[11px] font-bold text-white uppercase tracking-widest hover:text-white/60 transition-colors"
         >
           Sign In
         </button>
       </header>
 
-      {/* 3D CANVAS BACKGROUND */}
+      {/* 3D BACKGROUND */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Canvas>
           <PerspectiveCamera makeDefault position={[0, 0, 10]} />
           <ambientLight intensity={0.5} />
           <Grid 
             infiniteGrid 
-            fadeDistance={40} 
-            cellColor="#333" 
-            sectionColor="#444" 
+            fadeDistance={30} 
+            cellColor="#222" 
+            sectionColor="#333" 
             cellSize={1}
-            sectionSize={5}
-            position={[0, -2, 0]} 
+            sectionSize={4}
+            position={[0, -1.5, 0]} 
           />
           <BlueprintCore scroll={smoothProgress} />
         </Canvas>
       </div>
 
-      {/* SCROLLABLE CONTENT */}
-      <div className="relative z-10 pt-32">
+      <div className="relative z-10">
         
         {/* HERO */}
-        <section className="min-h-[85vh] flex flex-col justify-center items-center text-center px-4 mb-20">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{duration: 0.8}}>
-            <h1 className="text-[12vw] md:text-[8vw] font-bold text-white leading-none tracking-tighter mb-6 opacity-90">
+        <section className="h-screen flex flex-col justify-center items-center text-center px-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{duration: 1.5}}>
+            <h1 className="text-[14vw] md:text-[10vw] font-bold text-white leading-none tracking-tighter mb-4">
               GRECKO
             </h1>
-            <div className="h-8 md:h-12 flex items-center justify-center gap-2">
-               <span className="text-lg md:text-2xl text-white/70 font-light tracking-wide">
-                 {displayText}
-                 <span className="animate-pulse">|</span>
-               </span>
+            <div className="h-6 flex items-center justify-center font-mono text-white/50 text-xs md:text-sm tracking-[0.2em] uppercase">
+                {displayText}<span className="animate-pulse">_</span>
             </div>
-            <p className="text-white/40 mt-6 max-w-sm mx-auto text-sm md:text-base leading-relaxed">
-              The operating system for high-performance students.
-            </p>
           </motion.div>
         </section>
 
-        {/* SECTION 1: PREDICTIVE GPA */}
-        <FeatureSection 
-          title="Predictive GPA"
-          subtitle="Visualize the exact mathematical path to your 4.0 target."
-          icon={Target}
-        >
-          <div className="bg-[#050505] border border-white/10 rounded-3xl p-6 shadow-2xl relative">
-            <div className="flex justify-between items-end mb-6">
-              <div>
-                <div className="text-[10px] text-white/40 font-mono tracking-widest mb-1 uppercase">Projected Outcome</div>
-                <div className="text-4xl font-medium text-white tracking-tight">3.82</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-white/40 font-mono mb-1 uppercase">Target</div>
-                <div className="text-xl font-medium text-white/80">4.00</div>
-              </div>
-            </div>
-            <LiveTrendGraph />
-          </div>
-        </FeatureSection>
+        {/* CONTENT SECTIONS */}
+        <div className="pb-40">
+            <FeatureSection 
+              title="Predictive Analytics"
+              subtitle="Stop guessing. Our engine calculates your final GPA based on live assignment weighting."
+              icon={Target}
+            >
+              <LiveTrendGraph />
+            </FeatureSection>
 
-        {/* SECTION 2: AUTOMATED MASTERY */}
-        <FeatureSection 
-          title="Automated Mastery"
-          subtitle="Adaptive retention tracking. We map exactly what you know and what you're losing."
-          icon={Cpu}
-        >
-          <div className="bg-[#050505] border border-white/10 rounded-3xl p-1 shadow-2xl">
-             <MasteryHeatmap />
-          </div>
-        </FeatureSection>
+            <FeatureSection 
+              title="Memory Matrix"
+              subtitle="Active recall visualization. Know exactly when you're about to forget a concept."
+              icon={Cpu}
+            >
+              <MasteryHeatmap />
+            </FeatureSection>
 
-        {/* SECTION 3: TACTICAL AI */}
-        <FeatureSection 
-          title="Tactical AI"
-          subtitle="Strategic analysis of your coursework. It finds weaknesses before the exam does."
-          icon={Brain}
-        >
-          <div className="bg-[#050505] border border-white/10 rounded-3xl p-1 shadow-2xl">
-            <TacticalScanner />
-          </div>
-        </FeatureSection>
-        
-        {/* DESKTOP FOOTER */}
-        <div className="hidden md:flex flex-col items-center justify-center py-32 px-4 text-center z-10 relative border-t border-white/5 bg-black">
-             <div className="max-w-xl w-full">
-                <h2 className="text-3xl font-bold text-white mb-6 tracking-tight">Serious about your grades?</h2>
-                <button 
-                  onClick={() => setAuthModalMode('signup')}
-                  className="w-full bg-white text-black font-bold text-lg py-5 rounded-xl hover:bg-gray-200 transition-all"
-                >
-                  Start Semester
-                </button>
-             </div>
+            <FeatureSection 
+              title="Tactical AI"
+              subtitle="The mentor that actually reads your syllabus. Strategic insight, zero fluff."
+              icon={Brain}
+            >
+              <TacticalScanner />
+            </FeatureSection>
         </div>
+
+        {/* FOOTER CTA */}
+        <section className="py-40 flex flex-col items-center bg-gradient-to-t from-white/[0.02] to-transparent">
+            <h3 className="text-white text-3xl font-bold mb-8 tracking-tight">Ready for Precision?</h3>
+            <button 
+                onClick={() => setAuthModalMode('signup')}
+                className="bg-white text-black px-12 py-4 rounded-full font-bold hover:scale-105 transition-transform"
+            >
+                Join the Private Beta
+            </button>
+        </section>
       </div>
 
-      {/* MOBILE FLOATING BUTTON */}
-      <div className="fixed bottom-0 left-0 w-full z-40 p-6 pointer-events-none flex justify-center md:hidden">
-         <motion.button 
-             initial={{ y: 50, opacity: 0 }}
-             animate={{ y: 0, opacity: 1 }}
-             onClick={() => setAuthModalMode('signup')}
-             className="pointer-events-auto w-full max-w-xs bg-white text-black font-bold py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-all"
-          >
-             Get Started
-          </motion.button>
-      </div>
-
-      {/* AUTH MODAL */}
+      {/* MODAL */}
       <AnimatePresence>
         {authModalMode && (
-          <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
             <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              className="w-full max-w-md bg-[#0a0a0c] border border-white/10 rounded-[2rem] p-8 shadow-2xl relative"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-[#0A0A0A] border border-white/10 rounded-3xl p-10 relative"
             >
-               <button onClick={() => setAuthModalMode(null)} className="absolute top-6 right-6 text-white/30 hover:text-white transition-colors">
-                 <X size={20} />
+               <button onClick={() => setAuthModalMode(null)} className="absolute top-6 right-6 text-white/20 hover:text-white">
+                 <X size={18} />
                </button>
-               
-               <div className="text-center mb-8 mt-2">
-                 <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">
-                    {authModalMode === 'signup' ? 'Initialize Account' : 'Welcome Back'}
-                 </h2>
-                 <p className="text-white/40 text-sm">Access your academic dashboard.</p>
-               </div>
-
-               <div className="space-y-3">
-                 <button onClick={onGoogleAuth} className="w-full py-4 bg-white text-black font-bold rounded-xl flex justify-center items-center gap-3 hover:bg-gray-100 transition-colors">
-                    <Zap className="fill-black w-4 h-4"/> Continue with Google
+               <h2 className="text-xl font-bold text-white mb-8 text-center uppercase tracking-widest">
+                 {authModalMode}
+               </h2>
+               <div className="space-y-4">
+                 <button onClick={onGoogleAuth} className="w-full py-4 bg-white text-black font-bold rounded-xl text-xs uppercase tracking-widest">
+                    Google Auth
                  </button>
-                 <button onClick={() => { authModalMode === 'signup' ? onSignupWithEmail() : onLoginWithEmail() }} className="w-full py-4 bg-transparent text-white font-bold rounded-xl border border-white/10 hover:bg-white/5 transition-colors">
-                    Use Email
+                 <button onClick={() => authModalMode === 'signup' ? onSignupWithEmail() : onLoginWithEmail()} className="w-full py-4 bg-transparent text-white border border-white/10 rounded-xl text-xs uppercase tracking-widest">
+                    Email Auth
                  </button>
                </div>
             </motion.div>
