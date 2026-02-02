@@ -97,30 +97,24 @@ const StreamableMarkdown = ({
 }) => {
   const [displayedContent, setDisplayedContent] = useState('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null); // New: for fallback
   const wordIndexRef = useRef(0);
   const wordsRef = useRef<string[]>([]);
   const lastContentLengthRef = useRef(0);
 
   useEffect(() => {
-    // If not streaming, show full content immediately
     if (!isStreaming) {
       setDisplayedContent(content);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current); // Clear timeout
       return;
     }
 
-    // Split into words (preserving spaces and newlines)
-    const words = content.match(/\S+\s*/g) || [];
-    
-    // Only reset if content actually changed significantly (not just appended)
+    const words = content.match(/\S+\s*/g) || [content]; // Fallback: treat as one chunk if no matches
     const contentGrew = content.length > lastContentLengthRef.current;
     const isAppending = contentGrew && content.startsWith(displayedContent);
     
     if (!isAppending && wordIndexRef.current > 0) {
-      // Content changed unexpectedly, reset
       wordIndexRef.current = 0;
       setDisplayedContent('');
     }
@@ -129,6 +123,7 @@ const StreamableMarkdown = ({
     lastContentLengthRef.current = content.length;
 
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     intervalRef.current = setInterval(() => {
       if (wordIndexRef.current < wordsRef.current.length) {
@@ -136,21 +131,25 @@ const StreamableMarkdown = ({
         setDisplayedContent(newContent);
         wordIndexRef.current++;
       } else {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        if (onComplete) onComplete();
-      }
-    }, 25); // Optimized timing for smooth streaming
-
-    return () => {
-      if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+        if (onComplete) onComplete();
       }
+    }, 25);
+
+    // New: Fallback timeout (e.g., max 10s, or scale by content length)
+    const maxTime = Math.min(10000, content.length * 5); // ~5ms per char, cap at 10s
+    timeoutRef.current = setTimeout(() => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setDisplayedContent(content);
+      if (onComplete) onComplete();
+    }, maxTime);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [content, isStreaming, onComplete, displayedContent]);
+  }, [content, isStreaming, onComplete]);
 
   return (
     <div className="min-h-[20px]">
