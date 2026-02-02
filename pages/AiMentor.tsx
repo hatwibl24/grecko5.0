@@ -97,9 +97,9 @@ const StreamableMarkdown = ({
 }) => {
   const [displayedContent, setDisplayedContent] = useState('');
   
-  // FIXED: Using ReturnType<typeof ...> prevents Node vs Browser type conflicts
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // FIXED: Explicitly typed as number | null to satisfy window.setInterval return type
+  const intervalRef = useRef<number | null>(null);
+  const timeoutRef = useRef<number | null>(null);
   
   const wordIndexRef = useRef(0);
   const wordsRef = useRef<string[]>([]);
@@ -108,9 +108,8 @@ const StreamableMarkdown = ({
   useEffect(() => {
     if (!isStreaming) {
       setDisplayedContent(content);
-      // FIXED: Added window. prefix to force Browser API usage
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
+      if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
       return;
     }
 
@@ -126,18 +125,16 @@ const StreamableMarkdown = ({
     wordsRef.current = words;
     lastContentLengthRef.current = content.length;
 
-    // FIXED: Added window. prefix
-    if (intervalRef.current) window.clearInterval(intervalRef.current);
-    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
+    if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
 
-    // FIXED: Added window. prefix
     intervalRef.current = window.setInterval(() => {
       if (wordIndexRef.current < wordsRef.current.length) {
         const newContent = wordsRef.current.slice(0, wordIndexRef.current + 1).join('');
         setDisplayedContent(newContent);
         wordIndexRef.current++;
       } else {
-        if (intervalRef.current) window.clearInterval(intervalRef.current);
+        if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
         intervalRef.current = null;
         if (onComplete) onComplete();
       }
@@ -145,17 +142,15 @@ const StreamableMarkdown = ({
 
     const maxTime = Math.min(10000, content.length * 5); 
     
-    // FIXED: Added window. prefix
     timeoutRef.current = window.setTimeout(() => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
+      if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
       setDisplayedContent(content);
       if (onComplete) onComplete();
     }, maxTime);
 
     return () => {
-      // FIXED: Added window. prefix
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
+      if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
     };
   }, [content, isStreaming, onComplete]);
 
