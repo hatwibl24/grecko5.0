@@ -10,7 +10,6 @@ import {
   ArrowLeft, 
   Sparkles, 
   Bookmark, 
-  Info,
   Check
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -34,7 +33,7 @@ interface FeedItem {
   media_url?: string;
   price?: number;
   description?: string;
-  bg_gradient?: string; // From your database schema
+  bg_gradient?: string;
   courseId?: string;
   author?: string;
 }
@@ -46,7 +45,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const youtubeId = getYoutubeId(item.media_url || '');
     const [isPlayerReady, setIsPlayerReady] = useState(false);
-    const isIOS = typeof window !== 'undefined' ? /iPad|iPhone|iPod/.test(navigator.userAgent) : false;
 
     // 1. Handle HTML5 Video (Direct Uploads)
     useEffect(() => {
@@ -79,7 +77,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
     // 3. Control YouTube Playback
     useEffect(() => {
         if (iframeRef.current && youtubeId && isPlayerReady) {
-            // Logic: Play if active. If iOS, only play if user has interacted (browser restriction).
             const func = !isActive ? 'pauseVideo' : 'playVideo';
             iframeRef.current.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
         }
@@ -93,7 +90,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
         }
     }, [isMuted, youtubeId, isPlayerReady]);
 
-    // Placeholder if not active (Performance optimization)
     if (!isActive) {
         return (
             <div className="w-full h-full relative bg-black flex items-center justify-center">
@@ -110,7 +106,6 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
         <div className="w-full h-full relative bg-black flex items-center justify-center">
             {youtubeId ? (
                 <div className="w-full h-full relative overflow-hidden">
-                    {/* Scale 150% to simulate full-screen cover on mobile */}
                     <iframe
                         ref={iframeRef}
                         src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&playsinline=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3`}
@@ -131,10 +126,8 @@ const FeedVideoItem = ({ item, isActive, isMuted, toggleMute }: { item: FeedItem
                 />
             )}
             
-            {/* Gradient Overlay for Text Readability */}
             <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black/40 via-transparent to-black/90" />
             
-            {/* Mute Toggle */}
             <div className="absolute right-4 bottom-32 z-30 flex flex-col items-center gap-6">
                 <button 
                   onClick={(e) => { e.stopPropagation(); toggleMute(); }} 
@@ -161,7 +154,6 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   const containerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // Inject Styles for Grain & Animations
   useEffect(() => {
     const styleSheet = document.createElement("style");
     styleSheet.innerText = `
@@ -176,29 +168,23 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   }, []);
 
   // --- ALGORITHM: Weighted Interleave ---
-  // Mixes content so users see 3 Videos -> 1 Fact -> 1 Ad
-  const constructFeed = useCallback((visuals: any[], ads: any[]) => {
-    // 1. Separate by type
+  const constructFeed = useCallback((visuals: FeedItem[], ads: FeedItem[]) => {
     const videos = visuals.filter(v => v.type === 'video').sort(() => Math.random() - 0.5);
-    const nonVideos = visuals.filter(v => v.type !== 'video').sort(() => Math.random() - 0.5); // Facts & Images
+    const nonVideos = visuals.filter(v => v.type !== 'video').sort(() => Math.random() - 0.5);
     const shuffledAds = [...ads].sort(() => Math.random() - 0.5);
     
     const finalFeed: FeedItem[] = [];
     let nvPointer = 0;
     let adPointer = 0;
 
-    // 2. Loop through videos and inject other content
     for (let i = 0; i < videos.length; i += 3) {
-        // Add chunk of 3 videos
         finalFeed.push(...videos.slice(i, i + 3));
         
-        // Add 1 Fact/Image (if available)
         if (nonVideos[nvPointer]) {
             finalFeed.push(nonVideos[nvPointer]);
             nvPointer++;
         }
         
-        // Add 1 Ad (recycle if we run out)
         if (shuffledAds.length > 0) {
             finalFeed.push(shuffledAds[adPointer]);
             adPointer = (adPointer + 1) % shuffledAds.length;
@@ -213,7 +199,6 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     try {
         let visualQuery = supabase.from('visual_feed').select('*');
         
-        // Apply Search Filter if query exists
         if (query) {
             visualQuery = visualQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
         }
@@ -221,19 +206,26 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
         const { data: visualData } = await visualQuery;
         const { data: courseData } = await supabase.from('courses').select('*').eq('is_published', true);
 
-        // Normalize Data
-        const visuals = (visualData || []).map((v: any) => ({ 
-            id: v.id.toString(), type: v.type, title: v.title, 
-            description: v.description, media_url: v.media_url, 
-            bg_gradient: v.bg_gradient // Uses your specific gradient field
+        // --- FIXED TYPESCRIPT MAPPING ---
+        const visuals: FeedItem[] = (visualData || []).map((v: any) => ({ 
+            id: v.id.toString(), 
+            type: v.type as FeedItem['type'], // Explicit cast
+            title: v.title, 
+            description: v.description, 
+            media_url: v.media_url, 
+            bg_gradient: v.bg_gradient 
         }));
         
-        const ads = (courseData || []).map((c: Course) => ({ 
-            id: `ad-${c.id}`, type: 'course_ad', title: c.title, 
-            media_url: c.image, price: c.price, description: c.description, courseId: c.id 
+        const ads: FeedItem[] = (courseData || []).map((c: Course) => ({ 
+            id: `ad-${c.id}`, 
+            type: 'course_ad' as const, // Explicit literal type
+            title: c.title, 
+            media_url: c.image, 
+            price: c.price, 
+            description: c.description, 
+            courseId: c.id 
         }));
 
-        // If searching, show raw results. If not, use the smart algorithm.
         const mix = query ? [...visuals, ...ads] : constructFeed(visuals, ads);
         
         setDisplayedFeed(mix);
@@ -245,14 +237,12 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
     }
   }, [constructFeed]);
 
-  // Initial Load
   useEffect(() => { fetchFeed(); }, [fetchFeed]);
 
   // --- SNAP SCROLL OBSERVER ---
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Disconnect previous observer
     if (observer.current) observer.current.disconnect();
 
     observer.current = new IntersectionObserver((entries) => {
@@ -262,7 +252,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                 if (id) setActiveId(id);
             }
         });
-    }, { root: containerRef.current, threshold: 0.6 }); // 60% visibility triggers active state
+    }, { root: containerRef.current, threshold: 0.6 });
 
     const slides = containerRef.current.querySelectorAll('.snap-start');
     slides.forEach(slide => observer.current?.observe(slide));
@@ -282,7 +272,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   const clearSearch = () => {
       setSearchQuery("");
       setIsSearching(false);
-      fetchFeed(); // Reset to algorithmic feed
+      fetchFeed(); 
   };
 
   const handleShare = (item: FeedItem) => {
@@ -295,7 +285,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
   return (
     <div className="relative h-full w-full bg-black overflow-hidden flex flex-col">
       
-      {/* --- 1. SEARCH OVERLAY (TIKTOK STYLE) --- */}
+      {/* --- SEARCH OVERLAY --- */}
       <div className="absolute top-0 left-0 right-0 z-50 p-4 pt-12 flex items-center gap-3 bg-gradient-to-b from-black/80 to-transparent transition-all">
           {isSearching && (
               <button onClick={clearSearch} className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors">
@@ -319,7 +309,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
           </form>
       </div>
 
-      {/* --- 2. MAIN FEED CONTAINER --- */}
+      {/* --- FEED CONTAINER --- */}
       <div 
         ref={containerRef}
         className="flex-1 overflow-y-scroll snap-y snap-mandatory no-scrollbar h-full scroll-smooth bg-black"
@@ -342,8 +332,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                   data-id={item.id} 
                   className="relative w-full full-vh snap-start snap-always flex-none overflow-hidden bg-black"
                 >
-                    
-                    {/* --- A. CONTENT RENDERING --- */}
+                    {/* --- CONTENT --- */}
                     {item.type === 'video' ? (
                         <FeedVideoItem 
                             item={item} 
@@ -378,7 +367,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                         </div>
                     )}
 
-                    {/* --- B. RIGHT SIDEBAR ACTIONS --- */}
+                    {/* --- RIGHT ACTIONS --- */}
                     <div className="absolute right-4 bottom-48 flex flex-col gap-6 items-center z-30">
                         <div className="flex flex-col items-center gap-1">
                             <button 
@@ -397,11 +386,10 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                         </div>
                     </div>
 
-                    {/* --- C. BOTTOM INFO & CTA --- */}
+                    {/* --- BOTTOM INFO --- */}
                     <div className="absolute bottom-0 left-0 right-0 p-6 pb-28 md:pb-10 z-20 pointer-events-none">
                         <div className="max-w-[85%] pointer-events-auto">
                             {item.type === 'course_ad' ? (
-                                // Premium Ad Card
                                 <div className="bg-white/10 backdrop-blur-2xl border border-white/20 p-5 rounded-3xl shadow-2xl animate-in slide-in-from-bottom-6 duration-500">
                                     <div className="flex items-start justify-between mb-3">
                                         <div>
@@ -424,7 +412,6 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                                     </button>
                                 </div>
                             ) : (
-                                // Standard Content Info
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2.5">
                                         <div className="w-9 h-9 bg-gradient-to-tr from-indigo-500 to-blue-600 rounded-full flex items-center justify-center border-2 border-white/20 shadow-lg">
@@ -453,7 +440,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
                         </div>
                     </div>
 
-                    {/* --- D. TOAST NOTIFICATION --- */}
+                    {/* --- TOAST --- */}
                     {copiedId === item.id && (
                         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 bg-white/90 backdrop-blur text-black px-6 py-2.5 rounded-full font-bold text-sm shadow-2xl animate-in fade-in zoom-in slide-in-from-top-4">
                             Link Copied!
@@ -464,7 +451,7 @@ export const VisualLearning: React.FC<{ onNavigateToCourse: () => void }> = ({ o
           )}
       </div>
 
-      {/* --- 3. LOADING SPINNER OVERLAY --- */}
+      {/* --- LOADING --- */}
       {loading && (
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center gap-4">
               <div className="w-12 h-12 border-4 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
