@@ -4,10 +4,11 @@ import {
   Brain, Layers, Play, Pause, RotateCcw, CheckCircle2,
   Plus, Clock, AlertCircle, ChevronLeft, ChevronRight,
   Check, X, Trophy, RefreshCw, Lock, Loader2, Settings2,
-  Info, Minimize2, Flame, CloudRain, Volume2
+  Info, Minimize2, Flame, CloudRain, Volume2, Download, Zap
 } from 'lucide-react';
 import { Assignment, Course, QuizResult, QuizQuestion, Flashcard } from '../types';
 import { supabase } from '../lib/supabase';
+
 interface StudyToolsProps {
   assignments: Assignment[];
   courses: Course[];
@@ -15,8 +16,10 @@ interface StudyToolsProps {
   onToggle: (id: string) => void;
   onAddQuizResult: (result: QuizResult) => void;
 }
+
 export const StudyTools: React.FC<StudyToolsProps> = ({ assignments, courses, onAdd, onToggle, onAddQuizResult }) => {
   const [activeTab, setActiveTab] = useState('Practice');
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-none">
@@ -31,6 +34,7 @@ export const StudyTools: React.FC<StudyToolsProps> = ({ assignments, courses, on
     </div>
   );
 };
+
 // --- PRACTICE TAB (Quizzes & Flashcards) ---
 const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQuizResult: (result: QuizResult) => void }) => {
   const [view, setView] = useState<'menu' | 'course_select' | 'active'>('menu');
@@ -40,6 +44,7 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
  
   const [flashcardCount, setFlashcardCount] = useState(10);
+
   // Quiz State
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
@@ -47,16 +52,25 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
   const [quizScore, setQuizScore] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
+
   // Flashcard State
   const [generatedFlashcards, setGeneratedFlashcards] = useState<Flashcard[]>([]);
   const [fcIndex, setFcIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
  
   const hasSavedResult = useRef(false);
+
+  // Sort courses: Owned first, then Locked
+  const sortedCourses = [...courses].sort((a, b) => {
+      if (a.isOwned === b.isOwned) return 0;
+      return a.isOwned ? -1 : 1;
+  });
+
   const handleModeSelect = (selectedMode: 'quiz' | 'flashcards') => {
       setMode(selectedMode);
       setView('course_select');
   };
+
   const handleCourseSelect = async (course: Course) => {
     if (!course.isOwned) {
       setShowPurchaseModal(true);
@@ -68,6 +82,7 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
     try {
         const { data: { session } } = await (supabase.auth as any).getSession();
         if (!session) throw new Error("Not authenticated");
+
         const response = await fetch(`${(supabase as any).supabaseUrl}/functions/v1/ai-assistant`, {
             method: 'POST',
             headers: {
@@ -83,8 +98,10 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
                 count: mode === 'quiz' ? 10 : flashcardCount
             })
         });
+
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Edge function error");
+
         if (mode === 'quiz') {
             if (Array.isArray(data.data) && data.data.length > 0) {
                 setQuestions(data.data);
@@ -118,6 +135,7 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
         }
     }
   };
+
   const handleQuizAnswer = (index: number) => {
     if (isAnswerChecked) return;
     setSelectedOption(index);
@@ -127,28 +145,39 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
     if (index === questions[quizStep].correct) {
       setQuizScore(prev => prev + 1);
     }
+    
+    // Auto advance after short delay
     setTimeout(() => {
         handleNextQuestion();
     }, 1500);
   };
+
   const handleNextQuestion = () => {
     setQuizStep(prev => prev + 1);
     setSelectedOption(null);
     setIsAnswerChecked(false);
   };
+
   const nextCard = () => {
     setIsFlipped(false);
     setTimeout(() => {
       setFcIndex(prev => (prev + 1) % generatedFlashcards.length);
     }, 300);
   };
+
   const prevCard = () => {
     setIsFlipped(false);
     setTimeout(() => {
       setFcIndex(prev => (prev - 1 + generatedFlashcards.length) % generatedFlashcards.length);
     }, 300);
   };
+
+  const handlePrintReport = () => {
+      window.print();
+  };
+
   const isQuizFinished = mode === 'quiz' && view === 'active' && questions.length > 0 && quizStep >= questions.length;
+
   useEffect(() => {
     if (isQuizFinished && !hasSavedResult.current && activeCourse) {
         const percentage = Math.round((quizScore / questions.length) * 100);
@@ -162,6 +191,7 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
         hasSavedResult.current = true;
     }
   }, [isQuizFinished, quizScore, questions.length, activeCourse, onAddQuizResult]);
+
   if (isGenerating) {
      return (
         <div className="flex flex-col items-center justify-center p-12 bg-slate-50 dark:bg-zinc-900 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 animate-in fade-in h-[400px]">
@@ -171,6 +201,7 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
         </div>
      );
   }
+
   // 1. Menu View
   if (view === 'menu') {
     return (
@@ -190,7 +221,8 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
       </div>
     );
   }
-  // 2. Course Select View
+
+  // 2. Course Select View (IMPROVED SORTING)
   if (view === 'course_select') {
      return (
         <div className="animate-in fade-in slide-in-from-right-4">
@@ -203,7 +235,7 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {courses.length === 0 && <p className="col-span-3 text-center text-slate-500 py-10">No courses available. Go to the marketplace to add some!</p>}
-                {courses.map(course => (
+                {sortedCourses.map(course => (
                     <div key={course.id} onClick={() => handleCourseSelect(course)} className={`relative p-4 rounded-xl border cursor-pointer transition-all hover:shadow-lg flex items-center gap-4 ${course.isOwned ? 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 hover:border-primary dark:hover:border-primary' : 'bg-slate-50 dark:bg-zinc-900/50 border-dashed border-slate-300 dark:border-zinc-800 opacity-75 hover:opacity-100'}`}>
                         <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-zinc-800 overflow-hidden shrink-0"><img src={course.image} alt={course.title} className="w-full h-full object-cover" /></div>
                         <div className="flex-1 min-w-0"><h3 className="font-bold text-slate-900 dark:text-white truncate">{course.title}</h3>{!course.isOwned && (<div className="mt-1 flex items-center text-[10px] font-bold text-amber-500 uppercase"><Lock className="w-3 h-3 mr-1" /> Locked</div>)}</div>
@@ -214,41 +246,119 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
         </div>
      );
   }
+
   // 3. Active Quiz View
   if (view === 'active' && mode === 'quiz') {
       if (isQuizFinished) {
+          const percentage = Math.round((quizScore / questions.length) * 100);
+          const incorrectCount = questions.length - quizScore;
+          
           return (
-             <div className="max-w-2xl mx-auto space-y-8 animate-in zoom-in-95 duration-500 py-10">
-                 <div className="text-center">
-                    <div className="relative inline-block mb-4"><Trophy className="w-24 h-24 text-yellow-500 mx-auto drop-shadow-xl" /><div className="absolute -top-2 -right-2 bg-primary text-white font-bold px-3 py-1 rounded-full animate-bounce shadow-lg">{Math.round((quizScore / questions.length) * 100)}%</div></div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Quiz Completed!</h2>
-                    <p className="text-slate-500">You scored {quizScore} out of {questions.length}</p>
+             <div className="max-w-3xl mx-auto space-y-8 animate-in zoom-in-95 duration-500 py-6 print:py-0">
+                 {/* SCORE HERO DASHBOARD */}
+                 <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200 dark:border-zinc-800 shadow-xl text-center relative overflow-hidden print:border-none print:shadow-none">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500"></div>
+                    
+                    <div className="flex justify-between items-start mb-6">
+                        <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Quiz Performance</h2>
+                        <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 px-3 py-1 rounded-full text-xs font-bold">
+                             <Zap className="w-3 h-3 fill-current" /> 3 Day Streak
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row items-center justify-around gap-8">
+                        {/* Circular Progress */}
+                        <div className="relative">
+                             <svg className="w-40 h-40 transform -rotate-90">
+                                 <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-slate-100 dark:text-zinc-800" />
+                                 <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" 
+                                     strokeDasharray={439.8} 
+                                     strokeDashoffset={439.8 - (439.8 * percentage) / 100} 
+                                     strokeLinecap="round"
+                                     className={`transition-all duration-1000 ease-out ${percentage >= 70 ? 'text-green-500' : percentage >= 40 ? 'text-yellow-500' : 'text-red-500'}`} />
+                             </svg>
+                             <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                 <span className="text-4xl font-black text-slate-900 dark:text-white">{percentage}%</span>
+                                 <span className="text-xs text-slate-500 font-medium uppercase tracking-wide mt-1">{percentage >= 70 ? 'Passed' : 'Keep Trying'}</span>
+                             </div>
+                        </div>
+
+                        {/* Stat Grid */}
+                        <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
+                            <div className="bg-green-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-green-100 dark:border-zinc-800 min-w-[140px]">
+                                <div className="flex items-center gap-2 text-green-600 mb-1">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span className="text-xs font-bold uppercase">Correct</span>
+                                </div>
+                                <div className="text-2xl font-bold dark:text-white">{quizScore} <span className="text-sm text-slate-400 font-normal">/ {questions.length}</span></div>
+                            </div>
+                            <div className="bg-red-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-red-100 dark:border-zinc-800 min-w-[140px]">
+                                <div className="flex items-center gap-2 text-red-500 mb-1">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span className="text-xs font-bold uppercase">Wrong</span>
+                                </div>
+                                <div className="text-2xl font-bold dark:text-white">{incorrectCount}</div>
+                            </div>
+                        </div>
+                    </div>
                  </div>
-                 <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden">
-                     <div className="p-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50"><h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-500" /> Review Answers</h3></div>
-                     <div className="divide-y divide-slate-100 dark:divide-zinc-800 max-h-[500px] overflow-y-auto custom-scrollbar">
+
+                 {/* DETAILED ANSWER BREAKDOWN */}
+                 <div className="space-y-4 print:block">
+                     <div className="flex items-center justify-between px-1">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Detailed Review</h3>
+                        <Button variant="ghost" size="sm" onClick={handlePrintReport} icon={<Download className="w-4 h-4"/>} className="print:hidden">Download Report</Button>
+                     </div>
+                     
+                     <div className="space-y-4">
                          {questions.map((q, idx) => {
                              const userAnswer = userAnswers[idx];
                              const isCorrect = userAnswer === q.correct;
                              return (
-                                 <div key={idx} className="p-5 hover:bg-slate-50 dark:hover:bg-zinc-800/30 transition-colors">
-                                     <div className="flex gap-3 mb-3">
-                                         <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isCorrect ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>{idx + 1}</div>
-                                         <p className="font-medium text-slate-900 dark:text-white">{q.question}</p>
-                                     </div>
-                                     <div className="pl-9 space-y-3">
-                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                             <div className={`p-3 rounded-lg border ${isCorrect ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-900/50 text-green-800 dark:text-green-200' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-900/50 text-red-800 dark:text-red-200'}`}><span className="text-xs uppercase font-bold opacity-70 block mb-1">Your Answer</span>{q.options[userAnswer] || "Skipped"}</div>
-                                             {!isCorrect && (<div className="p-3 rounded-lg border bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-900/50 text-blue-800 dark:text-blue-200"><span className="text-xs uppercase font-bold opacity-70 block mb-1">Correct Answer</span>{q.options[q.correct]}</div>)}
+                                 <div key={idx} className={`bg-white dark:bg-zinc-900 rounded-xl border-l-4 overflow-hidden shadow-sm ${isCorrect ? 'border-l-green-500 border-slate-200 dark:border-zinc-800' : 'border-l-red-500 border-slate-200 dark:border-zinc-800'} border-y border-r`}>
+                                     <div className="p-5">
+                                         <div className="flex justify-between items-start gap-4 mb-4">
+                                             <div className="flex gap-3">
+                                                 <span className="text-slate-400 font-mono text-sm">#{idx + 1}</span>
+                                                 <p className="font-semibold text-slate-900 dark:text-white leading-snug">{q.question}</p>
+                                             </div>
+                                             {isCorrect ? 
+                                                 <div className="shrink-0 bg-green-100 dark:bg-green-900/30 text-green-600 p-1.5 rounded-full"><Check className="w-4 h-4" /></div> : 
+                                                 <div className="shrink-0 bg-red-100 dark:bg-red-900/30 text-red-500 p-1.5 rounded-full"><X className="w-4 h-4" /></div>
+                                             }
                                          </div>
-                                         {q.explanation && (<div className="text-sm text-slate-600 dark:text-slate-400 italic bg-slate-50 dark:bg-zinc-800 p-3 rounded-lg"><span className="font-bold not-italic">Why: </span> {q.explanation}</div>)}
+
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                             <div className={`text-sm p-3 rounded-xl border ${isCorrect ? 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30 text-red-700 dark:text-red-400'}`}>
+                                                 <span className="text-[10px] font-bold uppercase block mb-1 opacity-60">Your Choice</span>
+                                                 {q.options[userAnswer] || "No answer"}
+                                             </div>
+                                             {!isCorrect && (
+                                                 <div className="text-sm p-3 rounded-xl border bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/30 text-blue-700 dark:text-blue-400">
+                                                     <span className="text-[10px] font-bold uppercase block mb-1 opacity-60">Correct Answer</span>
+                                                     {q.options[q.correct]}
+                                                 </div>
+                                             )}
+                                         </div>
+                                         
+                                         {q.explanation && (
+                                             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800 text-sm text-slate-500 dark:text-slate-400 flex gap-2">
+                                                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+                                                 <span>{q.explanation}</span>
+                                             </div>
+                                         )}
                                      </div>
                                  </div>
                              );
                          })}
                      </div>
                  </div>
-                 <div className="grid grid-cols-2 gap-4"><Button variant="secondary" onClick={() => setView('menu')} icon={<RotateCcw className="w-4 h-4"/>}>Menu</Button><Button onClick={() => { setView('course_select'); setMode('quiz'); }} icon={<RefreshCw className="w-4 h-4"/>}>Try Another</Button></div>
+
+                 {/* ACTION BUTTONS */}
+                 <div className="grid grid-cols-2 gap-4 pt-4 print:hidden">
+                    <Button variant="secondary" onClick={() => setView('menu')} icon={<RotateCcw className="w-4 h-4"/>}>Menu</Button>
+                    <Button onClick={() => { setView('course_select'); setMode('quiz'); }} icon={<RefreshCw className="w-4 h-4"/>}>Try New Quiz</Button>
+                 </div>
              </div>
           )
       }
@@ -263,6 +373,7 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
          </div>
       );
   }
+
   // 4. Active Flashcard View (FIXED MOBILE 3D FLIP WITHOUT GHOSTING)
   if (view === 'active' && mode === 'flashcards') {
       const card = generatedFlashcards[fcIndex];
@@ -280,10 +391,11 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
                     style={{
                         transformStyle: 'preserve-3d',
                         WebkitTransformStyle: 'preserve-3d',
-                        transition: 'transform 0.6s',
+                        transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                         transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
                         WebkitTransform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        willChange: 'transform'
                     }}
                     onClick={() => setIsFlipped(!isFlipped)}
                 >
@@ -327,10 +439,12 @@ const PracticeTab = ({ courses, onAddQuizResult }: { courses: Course[], onAddQui
   }
   return null;
 };
+
 const FocusTab = ({ assignments, onAdd, onToggle }: { assignments: Assignment[], onAdd: (a: Assignment) => void, onToggle: (id: string) => void }) => {
   const [newAssignment, setNewAssignment] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [courseName, setCourseName] = useState("");
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAssignment.trim()) return;
@@ -345,6 +459,7 @@ const FocusTab = ({ assignments, onAdd, onToggle }: { assignments: Assignment[],
     setDueDate("");
     setCourseName("");
   };
+
   return (
      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Task List */}
@@ -360,6 +475,7 @@ const FocusTab = ({ assignments, onAdd, onToggle }: { assignments: Assignment[],
      </div>
   );
 };
+
 const getSmartRecommendation = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning! You usually focus best with a 25m session now.";
