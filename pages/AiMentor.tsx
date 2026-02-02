@@ -96,8 +96,11 @@ const StreamableMarkdown = ({
   components: any;
 }) => {
   const [displayedContent, setDisplayedContent] = useState('');
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null); // New: for fallback
+  
+  // FIXED: Using ReturnType<typeof ...> prevents Node vs Browser type conflicts
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
   const wordIndexRef = useRef(0);
   const wordsRef = useRef<string[]>([]);
   const lastContentLengthRef = useRef(0);
@@ -105,12 +108,13 @@ const StreamableMarkdown = ({
   useEffect(() => {
     if (!isStreaming) {
       setDisplayedContent(content);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current); // Clear timeout
+      // FIXED: Added window. prefix to force Browser API usage
+      if (intervalRef.current) window.clearInterval(intervalRef.current);
+      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
       return;
     }
 
-    const words = content.match(/\S+\s*/g) || [content]; // Fallback: treat as one chunk if no matches
+    const words = content.match(/\S+\s*/g) || [content]; 
     const contentGrew = content.length > lastContentLengthRef.current;
     const isAppending = contentGrew && content.startsWith(displayedContent);
     
@@ -122,32 +126,36 @@ const StreamableMarkdown = ({
     wordsRef.current = words;
     lastContentLengthRef.current = content.length;
 
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    // FIXED: Added window. prefix
+    if (intervalRef.current) window.clearInterval(intervalRef.current);
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
 
-    intervalRef.current = setInterval(() => {
+    // FIXED: Added window. prefix
+    intervalRef.current = window.setInterval(() => {
       if (wordIndexRef.current < wordsRef.current.length) {
         const newContent = wordsRef.current.slice(0, wordIndexRef.current + 1).join('');
         setDisplayedContent(newContent);
         wordIndexRef.current++;
       } else {
-        clearInterval(intervalRef.current);
+        if (intervalRef.current) window.clearInterval(intervalRef.current);
         intervalRef.current = null;
         if (onComplete) onComplete();
       }
     }, 25);
 
-    // New: Fallback timeout (e.g., max 10s, or scale by content length)
-    const maxTime = Math.min(10000, content.length * 5); // ~5ms per char, cap at 10s
-    timeoutRef.current = setTimeout(() => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+    const maxTime = Math.min(10000, content.length * 5); 
+    
+    // FIXED: Added window. prefix
+    timeoutRef.current = window.setTimeout(() => {
+      if (intervalRef.current) window.clearInterval(intervalRef.current);
       setDisplayedContent(content);
       if (onComplete) onComplete();
     }, maxTime);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      // FIXED: Added window. prefix
+      if (intervalRef.current) window.clearInterval(intervalRef.current);
+      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
     };
   }, [content, isStreaming, onComplete]);
 
