@@ -540,18 +540,49 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
     }
   };
 
+  const platformHighlights = [
+    {
+      title: 'GPA Intelligence',
+      description: 'Forecast outcomes, track every assessment, and map a precise route to your target GPA.',
+      icon: Target,
+    },
+    {
+      title: 'Adaptive Study Tools',
+      description: 'Flashcards, quizzes, and notes that respond to how you learn, not just what you learn.',
+      icon: Cpu,
+    },
+    {
+      title: 'Always-on Mentor',
+      description: 'A personal AI advisor that aligns daily study with your long-term academic goals.',
+      icon: Brain,
+    },
+  ]
+
   return (
     <div ref={containerRef} className="bg-[#020205] min-h-screen relative overflow-x-hidden font-sans selection:bg-blue-500/30 pb-32">
       
       {/* 1. TOP HEADER (FIXED) */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-[#020205]/80 backdrop-blur-md border-b border-white/5">
-        <div className="text-2xl font-black text-white tracking-tighter italic">GRECKO</div>
-        <button 
-          onClick={() => setAuthModalMode('login')}
-          className="text-sm font-bold text-white/80 hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-full border border-white/10"
-        >
-          Sign In
-        </button>
+      <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-[#05050a]/70 backdrop-blur-xl border-b border-white/5">
+        <div className="text-2xl font-black text-white tracking-tight">GRECKO</div>
+        <nav className="hidden md:flex items-center gap-6 text-sm text-white/60 font-medium">
+          <a href="#platform" className="hover:text-white transition-colors">Platform</a>
+          <a href="#features" className="hover:text-white transition-colors">Features</a>
+          <a href="#mentor" className="hover:text-white transition-colors">AI Mentor</a>
+        </nav>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setAuthModalMode('login')}
+            className="text-sm font-semibold text-white/80 hover:text-white transition-colors px-4 py-2 rounded-full border border-white/10 bg-white/5"
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => setAuthModalMode('signup')}
+            className="hidden sm:inline-flex text-sm font-semibold text-black bg-white rounded-full px-4 py-2 shadow-[0_10px_30px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Get Started
+          </button>
+        </div>
       </header>
 
       {/* 2. RESTORED 3D BACKGROUND (BLUEPRINT CORE) */}
@@ -575,9 +606,12 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
       <div className="relative z-10 pt-32">
         
         {/* HERO */}
-        <section className="min-h-[90vh] flex flex-col justify-center items-center text-center px-4 mb-20">
+        <section id="top" className="min-h-[90vh] flex flex-col justify-center items-center text-center px-4 mb-20">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <h1 className="text-[15vw] md:text-[12vw] font-black text-white leading-none tracking-tighter mb-4">
+            <div className="text-xs md:text-sm uppercase tracking-[0.4em] text-white/40 mb-6">
+              Student Companion Platform
+            </div>
+            <h1 className="text-[14vw] md:text-[10vw] font-black text-white leading-none tracking-tight mb-4">
               GRECKO
             </h1>
             <div className="h-10 md:h-16">
@@ -586,9 +620,23 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
                  <span className="animate-pulse">_</span>
                </span>
             </div>
-            <p className="text-white/50 mt-8 max-w-md mx-auto">
-              The Strategic Academic Operating System.
+            <p className="text-white/60 mt-8 max-w-xl mx-auto text-lg leading-relaxed">
+              An elegant academic command center that organizes your learning, predicts your GPA, and guides every study session.
             </p>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => setAuthModalMode('signup')}
+                className="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-black font-semibold shadow-[0_20px_60px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Create your account
+              </button>
+              <button
+                onClick={() => setAuthModalMode('login')}
+                className="w-full sm:w-auto px-8 py-4 rounded-full border border-white/15 text-white/80 font-semibold hover:text-white hover:border-white/40 transition-colors"
+              >
+                Sign in
+              </button>
+            </div>
           </motion.div>
           
           {/* Scroll Indicator */}
@@ -601,6 +649,39 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </motion.div>
         </section>
 
+        {/* PLATFORM OVERVIEW */}
+        <section id="platform" className="px-6 mb-32">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-3">Platform</p>
+                <h2 className="text-4xl md:text-5xl font-semibold text-white">All of your academic tools, one calm interface.</h2>
+              </div>
+              <p className="text-white/50 max-w-xl leading-relaxed">
+                Grecko blends planning, performance tracking, and intelligent study support into a refined experience that feels effortless.
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3">
+              {platformHighlights.map((highlight) => {
+                const Icon = highlight.icon
+                return (
+                  <div
+                    key={highlight.title}
+                    className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-6">
+                      <Icon className="w-6 h-6 text-blue-300" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white mb-3">{highlight.title}</h3>
+                    <p className="text-white/50 leading-relaxed">{highlight.description}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        <div id="features" />
         {/* SECTION 1: PREDICTIVE GPA (With Animated Graph) */}
         <FeatureSection 
           title="Predictive GPA"
@@ -669,6 +750,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </FeatureSection>
 
         {/* SECTION 3: AI MENTOR (High Contrast & Typing) */}
+        <div id="mentor" />
         <FeatureSection 
           title="AI Mentor"
           subtitle="24/7 Strategic advice. It knows your grades, your goals, and exactly what you need to study next."
