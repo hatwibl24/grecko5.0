@@ -6,13 +6,40 @@ import { PerspectiveCamera, Grid, Edges, Float } from '@react-three/drei'
 import { motion, useScroll, useSpring, AnimatePresence } from 'framer-motion'
 import * as THREE from 'three'
 import { X, ChevronRight, Target, Cpu, Brain, Zap, AlertTriangle, ChevronLeft } from 'lucide-react'
-import { FcGoogle } from 'react-icons/fc'
 
 interface LandingProps {
   onLoginWithEmail: () => void
   onSignupWithEmail: () => void
   onGoogleAuth: () => void
 }
+
+/* ===================== INLINE GOOGLE ICON (NO DEPENDENCIES) ===================== */
+const GoogleG = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 48 48"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      fill="#EA4335"
+      d="M24 9.5c3.54 0 6.16 1.53 7.57 2.8l5.18-5.18C33.62 4.26 29.25 2 24 2 14.62 2 6.52 7.38 2.7 15.2l6.08 4.72C10.67 13.6 16.85 9.5 24 9.5z"
+    />
+    <path
+      fill="#4285F4"
+      d="M46.5 24.5c0-1.65-.15-2.87-.47-4.14H24v7.83h12.92c-.26 2.06-1.67 5.17-4.8 7.25l6.22 4.82c3.74-3.45 8.16-8.52 8.16-13.81z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M8.78 28.92A14.6 14.6 0 0 1 8 24c0-1.72.3-3.37.78-4.92L2.7 14.36A23.93 23.93 0 0 0 0 24c0 3.86.92 7.5 2.7 10.64l6.08-5.72z"
+    />
+    <path
+      fill="#34A853"
+      d="M24 46c6.3 0 11.58-2.08 15.44-5.67l-6.22-4.82c-1.67 1.16-3.93 1.97-9.22 1.97-7.1 0-13.12-4.1-15.28-9.78l-6.08 5.72C6.5 40.62 14.62 46 24 46z"
+    />
+    <path fill="none" d="M0 0h48v48H0z" />
+  </svg>
+)
 
 /* ===================== 1. ORIGINAL 3D BLUEPRINT CORE ===================== */
 const BlueprintCore = ({ scroll }: { scroll: any }) => {
@@ -143,11 +170,8 @@ const FeatureSection = ({ title, subtitle, icon: Icon, children, delay = 0 }: an
       </div>
 
       <h2 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">{title}</h2>
-      <p className="text-blue-100 text-lg md:text-xl font-medium mb-10 leading-relaxed max-w-lg opacity-90">
-        {subtitle}
-      </p>
+      <p className="text-blue-100 text-lg md:text-xl font-medium mb-10 leading-relaxed max-w-lg opacity-90">{subtitle}</p>
 
-      {/* VISUAL CONTAINER (BELOW TEXT) */}
       <div className="w-full transform transition-all duration-500 hover:scale-[1.02]">{children}</div>
     </motion.div>
   )
@@ -158,7 +182,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null)
   const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | 'use' | null>(null)
 
-  // 1. SCROLL HOOKS FOR 3D ENGINE
+  // SCROLL HOOKS FOR 3D ENGINE
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: containerRef })
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 45, damping: 25 })
@@ -183,10 +207,11 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         }
       }
     }, isDeleting ? 40 : 80)
+
     return () => clearTimeout(timer)
   }, [displayText, isDeleting, textIndex])
 
-  // ===================== POLICY CONTENT INJECTION =====================
+  // POLICY CONTENT
   const getPolicyTitle = () => {
     switch (activePolicy) {
       case 'privacy':
@@ -210,9 +235,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
             <div>
               <p className="text-sm text-slate-500 mb-4">Last Updated: 30th November 2025</p>
               <p>
-                At Grecko, your privacy is our priority. This Privacy Policy explains what information we collect from
-                users, how we use it, how we protect it, and your rights regarding your data when using Grecko. By using
-                Grecko, you agree to the practices described in this policy.
+                At Grecko, your privacy is our priority. This Privacy Policy explains what information we collect from users, how we use it, how we protect it, and your rights regarding your data when using Grecko. By using Grecko, you agree to the practices described in this policy.
               </p>
             </div>
 
@@ -238,21 +261,11 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
               <h3 className="font-bold text-white mb-3 text-lg">2. How We Use Your Information</h3>
               <p className="mb-2 font-medium">We use your information strictly to support your learning and account functionality:</p>
               <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                <li>
-                  <strong>Account Creation & Management:</strong> Manage user accounts and allow login securely.
-                </li>
-                <li>
-                  <strong>AI Learning Assistance:</strong> Generate AI study suggestions and educational content personalized for you.
-                </li>
-                <li>
-                  <strong>Assignment & Content Storage:</strong> Store and retrieve uploaded assignments, notes, and AI responses.
-                </li>
-                <li>
-                  <strong>Customer Support:</strong> Respond to inquiries or issues regarding account access, assignments, or app functionality.
-                </li>
-                <li>
-                  <strong>Security:</strong> Protect accounts from unauthorized access.
-                </li>
+                <li><strong>Account Creation & Management:</strong> Manage user accounts and allow login securely.</li>
+                <li><strong>AI Learning Assistance:</strong> Generate AI study suggestions and educational content personalized for you.</li>
+                <li><strong>Assignment & Content Storage:</strong> Store and retrieve uploaded assignments, notes, and AI responses.</li>
+                <li><strong>Customer Support:</strong> Respond to inquiries or issues regarding account access, assignments, or app functionality.</li>
+                <li><strong>Security:</strong> Protect accounts from unauthorized access.</li>
               </ul>
               <p className="mt-2 font-medium text-white">Grecko does not use your data for advertising or sell it to third parties.</p>
             </section>
@@ -261,18 +274,10 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
               <h3 className="font-bold text-white mb-3 text-lg">3. How We Store & Protect Data</h3>
               <p className="mb-2 font-medium">Your data is stored securely and handled carefully:</p>
               <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                <li>
-                  <strong>Supabase Database:</strong> All user data, including assignments and AI-generated content, is stored securely in Supabase.
-                </li>
-                <li>
-                  <strong>Encrypted Passwords:</strong> Passwords are encrypted to prevent unauthorized access.
-                </li>
-                <li>
-                  <strong>Access Control:</strong> Only authorized systems or personnel can access user data for app functionality or support.
-                </li>
-                <li>
-                  <strong>Backups & Security Measures:</strong> Regular backups and security updates ensure your information is safe.
-                </li>
+                <li><strong>Supabase Database:</strong> All user data, including assignments and AI-generated content, is stored securely in Supabase.</li>
+                <li><strong>Encrypted Passwords:</strong> Passwords are encrypted to prevent unauthorized access.</li>
+                <li><strong>Access Control:</strong> Only authorized systems or personnel can access user data for app functionality or support.</li>
+                <li><strong>Backups & Security Measures:</strong> Regular backups and security updates ensure your information is safe.</li>
               </ul>
             </section>
 
@@ -280,15 +285,9 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
               <h3 className="font-bold text-white mb-3 text-lg">4. Sharing of Data</h3>
               <p className="mb-2 font-medium">We respect your privacy. Your data is only shared in the following limited cases:</p>
               <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                <li>
-                  <strong>Trusted Services:</strong> With Supabase for secure data storage and email services for account notifications.
-                </li>
-                <li>
-                  <strong>Legal Requirements:</strong> If required by law or legal process.
-                </li>
-                <li>
-                  <strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, user information may be transferred under privacy-compliant procedures.
-                </li>
+                <li><strong>Trusted Services:</strong> With Supabase for secure data storage and email services for account notifications.</li>
+                <li><strong>Legal Requirements:</strong> If required by law or legal process.</li>
+                <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, user information may be transferred under privacy-compliant procedures.</li>
               </ul>
               <p className="mt-2 font-medium text-white">We never sell your data to third parties.</p>
             </section>
@@ -297,21 +296,14 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
               <h3 className="font-bold text-white mb-3 text-lg">5. User Rights and Choices</h3>
               <p className="mb-2 font-medium">You have the right to control your data:</p>
               <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                <li>
-                  <strong>Access:</strong> Request a copy of the personal data we hold.
-                </li>
-                <li>
-                  <strong>Correction:</strong> Update or correct personal information, including name, email, or GPA.
-                </li>
-                <li>
-                  <strong>Deletion:</strong> Delete your account and remove all associated data from Grecko.
-                </li>
+                <li><strong>Access:</strong> Request a copy of the personal data we hold.</li>
+                <li><strong>Correction:</strong> Update or correct personal information, including name, email, or GPA.</li>
+                <li><strong>Deletion:</strong> Delete your account and remove all associated data from Grecko.</li>
                 <li>
                   <strong>Contact:</strong> Any requests regarding data can be made via{' '}
                   <a href={`mailto:${contactEmail}`} className="text-blue-400 hover:underline">
                     {contactEmail}
-                  </a>
-                  .
+                  </a>.
                 </li>
               </ul>
             </section>
@@ -348,9 +340,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           <div className="space-y-8 text-slate-300 leading-relaxed text-left">
             <div>
               <p className="text-sm text-slate-500 mb-4">Last Updated: 30th November 2025</p>
-              <p>
-                These Terms of Service (“Terms”) govern your use of the Grecko app and related services. By accessing or using Grecko, you agree to comply with these Terms. Please read them carefully.
-              </p>
+              <p>These Terms of Service (“Terms”) govern your use of the Grecko app and related services. By accessing or using Grecko, you agree to comply with these Terms. Please read them carefully.</p>
             </div>
 
             <div className="w-full h-px bg-white/10" />
@@ -379,15 +369,9 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
             <section>
               <h3 className="font-bold text-white mb-3 text-lg">3. User-Generated Content</h3>
               <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                <li>
-                  <strong>Ownership:</strong> Users retain full ownership of all content uploaded to the app, including assignments, notes, and other study materials.
-                </li>
-                <li>
-                  <strong>License to Grecko:</strong> By uploading content, users grant Grecko a non-exclusive license to store, display, and use such content for app functionality, including AI processing, assignment management, and account display.
-                </li>
-                <li>
-                  <strong>Prohibited Content:</strong> Content that is illegal, abusive, harmful, or violates any laws may be removed by Grecko at its discretion.
-                </li>
+                <li><strong>Ownership:</strong> Users retain full ownership of all content uploaded to the app, including assignments, notes, and other study materials.</li>
+                <li><strong>License to Grecko:</strong> By uploading content, users grant Grecko a non-exclusive license to store, display, and use such content for app functionality, including AI processing, assignment management, and account display.</li>
+                <li><strong>Prohibited Content:</strong> Content that is illegal, abusive, harmful, or violates any laws may be removed by Grecko at its discretion.</li>
               </ul>
             </section>
 
@@ -417,9 +401,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
 
             <section>
               <h3 className="font-bold text-white mb-3 text-lg">6. Payments and Subscriptions</h3>
-              <p>
-                Grecko may offer premium features or subscription services. Payments are processed securely through our payment provider. By purchasing, you agree to any additional payment terms provided at the time of purchase.
-              </p>
+              <p>Grecko may offer premium features or subscription services. Payments are processed securely through our payment provider. By purchasing, you agree to any additional payment terms provided at the time of purchase.</p>
             </section>
 
             <section>
@@ -450,9 +432,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           <div className="space-y-8 text-slate-300 leading-relaxed text-left">
             <div>
               <p className="text-sm text-slate-500 mb-4">Last Updated: 30th November 2025</p>
-              <p>
-                These Terms of Use describe how Grecko can be used responsibly and effectively for educational purposes. By using Grecko, you agree to the following guidelines:
-              </p>
+              <p>These Terms of Use describe how Grecko can be used responsibly and effectively for educational purposes. By using Grecko, you agree to the following guidelines:</p>
             </div>
 
             <div className="w-full h-px bg-white/10" />
@@ -524,23 +504,14 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
   ]
 
   return (
-    <div
-      ref={containerRef}
-      className="bg-[#020205] min-h-screen relative overflow-x-hidden font-sans selection:bg-blue-500/30"
-    >
+    <div ref={containerRef} className="bg-[#020205] min-h-screen relative overflow-x-hidden font-sans selection:bg-blue-500/30">
       {/* 1. TOP HEADER (FIXED) */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 py-5 flex justify-between items-center bg-[#05050a]/70 backdrop-blur-xl border-b border-white/5">
         <div className="text-lg sm:text-xl font-semibold text-white tracking-[0.2em] uppercase">Grecko</div>
         <nav className="hidden md:flex items-center gap-8 text-sm text-white/60 font-medium">
-          <a href="#platform" className="hover:text-white transition-colors">
-            Platform
-          </a>
-          <a href="#features" className="hover:text-white transition-colors">
-            Features
-          </a>
-          <a href="#mentor" className="hover:text-white transition-colors">
-            Mentor
-          </a>
+          <a href="#platform" className="hover:text-white transition-colors">Platform</a>
+          <a href="#features" className="hover:text-white transition-colors">Features</a>
+          <a href="#mentor" className="hover:text-white transition-colors">Mentor</a>
         </nav>
         <div className="flex items-center gap-3">
           <button
@@ -558,7 +529,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </div>
       </header>
 
-      {/* 2. RESTORED 3D BACKGROUND (BLUEPRINT CORE) */}
+      {/* 2. 3D BACKGROUND */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Canvas>
           <PerspectiveCamera makeDefault position={[0, 0, 10]} />
@@ -575,7 +546,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </Canvas>
       </div>
 
-      {/* 3. SCROLL CONTENT */}
+      {/* 3. CONTENT */}
       <div className="relative z-10 pt-32">
         {/* HERO */}
         <section id="top" className="min-h-[92vh] flex flex-col justify-center items-center text-center px-6 mb-24">
@@ -611,7 +582,6 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
             <p className="mt-6 text-xs uppercase tracking-[0.3em] text-white/35">Built for students who want clarity</p>
           </motion.div>
 
-          {/* Scroll Indicator */}
           <motion.div
             animate={{ y: [0, 10, 0] }}
             transition={{ repeat: Infinity, duration: 2 }}
@@ -655,12 +625,8 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
 
         <div id="features" />
 
-        {/* SECTION 1: PREDICTIVE GPA (With Animated Graph) */}
-        <FeatureSection
-          title="Predictive GPA"
-          subtitle="Set your target. Watch the app calculate the exact path to hit your 4.0."
-          icon={Target}
-        >
+        {/* FEATURES */}
+        <FeatureSection title="Predictive GPA" subtitle="Set your target. Watch the app calculate the exact path to hit your 4.0." icon={Target}>
           <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6 shadow-2xl">
             <div className="flex justify-between items-end mb-6">
               <div>
@@ -686,15 +652,9 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </div>
         </FeatureSection>
 
-        {/* SECTION 2: AUTOMATED MASTERY (With Progress Animation) */}
-        <FeatureSection
-          title="Automated Mastery"
-          subtitle="AI Flashcards and Quizzes that adapt to your retention level in real-time."
-          icon={Cpu}
-        >
+        <FeatureSection title="Automated Mastery" subtitle="AI Flashcards and Quizzes that adapt to your retention level in real-time." icon={Cpu}>
           <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 blur-3xl rounded-full" />
-
             <div className="space-y-6">
               {['Biology 101', 'Chemistry Lab', 'Calculus II'].map((subject, i) => (
                 <div key={i} className="space-y-2">
@@ -713,7 +673,6 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
                 </div>
               ))}
             </div>
-
             <div className="mt-8 pt-6 border-t border-white/10">
               <button className="w-full py-4 bg-white text-black font-black rounded-xl hover:bg-gray-200 transition-colors flex justify-center items-center gap-2">
                 <Zap className="w-4 h-4 fill-black" /> START MASTERY SESSION
@@ -722,13 +681,8 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </div>
         </FeatureSection>
 
-        {/* SECTION 3: AI MENTOR (High Contrast & Typing) */}
         <div id="mentor" />
-        <FeatureSection
-          title="AI Mentor"
-          subtitle="24/7 Strategic advice. It knows your grades, your goals, and exactly what you need to study next."
-          icon={Brain}
-        >
+        <FeatureSection title="AI Mentor" subtitle="24/7 Strategic advice. It knows your grades, your goals, and exactly what you need to study next." icon={Brain}>
           <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6 shadow-2xl text-left">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
@@ -759,7 +713,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </div>
         </FeatureSection>
 
-        {/* DESKTOP FOOTER CTA */}
+        {/* DESKTOP CTA */}
         <div className="hidden md:flex flex-col items-center justify-center py-24 px-4 text-center z-10 relative">
           <div className="max-w-xl w-full">
             <h2 className="text-4xl font-black text-white mb-8">Ready to dominate?</h2>
@@ -770,20 +724,14 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
               Start Your Semester
             </button>
             <div className="flex justify-center gap-6 mt-8 text-sm text-white/30 font-bold uppercase tracking-widest">
-              <button onClick={() => setActivePolicy('privacy')} className="hover:text-white transition-colors">
-                Privacy
-              </button>
-              <button onClick={() => setActivePolicy('terms')} className="hover:text-white transition-colors">
-                Terms
-              </button>
-              <button onClick={() => setActivePolicy('use')} className="hover:text-white transition-colors">
-                Use
-              </button>
+              <button onClick={() => setActivePolicy('privacy')} className="hover:text-white transition-colors">Privacy</button>
+              <button onClick={() => setActivePolicy('terms')} className="hover:text-white transition-colors">Terms</button>
+              <button onClick={() => setActivePolicy('use')} className="hover:text-white transition-colors">Use</button>
             </div>
           </div>
         </div>
 
-        {/* ✅ MOBILE CTA AT BOTTOM OF PAGE (NOT STICKY) */}
+        {/* ✅ MOBILE CTA AT BOTTOM OF PAGE (NOT FIXED) */}
         <div className="mt-24 px-6 pb-10 flex justify-center md:hidden">
           <div className="w-full max-w-md flex flex-col gap-3">
             <div className="bg-[#0f286e]/80 backdrop-blur-xl border border-white/20 p-2 rounded-[2rem] shadow-2xl flex items-center">
@@ -796,15 +744,9 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
             </div>
 
             <div className="flex justify-center gap-4 text-[10px] text-white/40 font-medium uppercase tracking-widest bg-black/50 backdrop-blur-md py-2 rounded-full w-fit mx-auto px-6">
-              <button onClick={() => setActivePolicy('privacy')} className="hover:text-white">
-                Privacy
-              </button>
-              <button onClick={() => setActivePolicy('terms')} className="hover:text-white">
-                Terms
-              </button>
-              <button onClick={() => setActivePolicy('use')} className="hover:text-white">
-                Use
-              </button>
+              <button onClick={() => setActivePolicy('privacy')} className="hover:text-white">Privacy</button>
+              <button onClick={() => setActivePolicy('terms')} className="hover:text-white">Terms</button>
+              <button onClick={() => setActivePolicy('use')} className="hover:text-white">Use</button>
             </div>
           </div>
         </div>
@@ -836,7 +778,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
                   onClick={onGoogleAuth}
                   className="w-full py-4 bg-white text-black font-bold rounded-xl flex justify-center items-center gap-3"
                 >
-                  <FcGoogle className="w-5 h-5" />
+                  <GoogleG className="w-5 h-5" />
                   Continue with Google
                 </button>
 
@@ -854,7 +796,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         )}
       </AnimatePresence>
 
-      {/* POLICY MODAL (Full Screen Slide Up) */}
+      {/* POLICY MODAL */}
       <AnimatePresence>
         {activePolicy && (
           <motion.div
@@ -864,7 +806,6 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed inset-0 z-[70] bg-[#0a0a0c] flex flex-col"
           >
-            {/* Header */}
             <div className="flex-none px-6 py-4 border-b border-white/10 flex items-center justify-between bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-10">
               <div className="flex items-center gap-4">
                 <button
@@ -877,7 +818,6 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
               </div>
             </div>
 
-            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 md:p-8">
               <div className="max-w-2xl mx-auto pb-12">
                 {getPolicyContent()}
