@@ -338,64 +338,28 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
               </ul>
               <div className="mt-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                  <p className="text-red-300 font-medium text-sm leading-relaxed">
-                      <strong>Important:</strong> Violation of these rules may result in immediate account suspension or permanent termination.
-                  </p>
+                  <p>Violations of these rules may result in immediate account termination.</p>
               </div>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">6. Account Termination</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko may suspend or terminate user accounts that violate these Terms.</li>
-                  <li>Users may request deletion of their account, at which point all associated data will be removed from Supabase.</li>
-                  <li>Users whose accounts are terminated may not attempt to create new accounts to circumvent suspensions.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">6. Payments and Subscriptions</h3>
+              <p>Grecko may offer premium features or subscription services. Payments are processed securely through our payment provider. By purchasing, you agree to any additional payment terms provided at the time of purchase.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">7. Data Collection and Privacy</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko collects user information, including name, email, password (encrypted), GPA, school grade, uploaded assignments, notes, and AI-generated content.</li>
-                  <li>Data is stored securely in Supabase and used only for app functionality, AI processing, account management, and customer support.</li>
-                  <li>Grecko does not sell user data. For more details, see the Privacy Policy.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">7. Limitation of Liability</h3>
+              <p>Grecko is provided “as is” without warranties of any kind. Grecko is not liable for academic outcomes, lost data, or damages arising from use of the app.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">8. Service Availability</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko may experience maintenance, updates, or downtime.</li>
-                  <li>While we strive to provide uninterrupted service, Grecko does not guarantee 100% availability.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">8. Termination</h3>
+              <p>Grecko reserves the right to suspend or terminate access to the app at any time for violations of these Terms.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">9. Limitation of Liability</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>The app and its services are provided “as is” without warranties of any kind.</li>
-                  <li>Grecko is not responsible for academic outcomes, data loss, or any damages arising from the use of the app.</li>
-                  <li>Users agree to use the app at their own risk.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">10. Changes to Terms</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko may update these Terms from time to time.</li>
-                  <li>Major changes will be communicated to users via the app.</li>
-                  <li>Continued use of the app after updates constitutes acceptance of the revised Terms.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">11. Governing Law</h3>
-              <p>These Terms are governed by the laws of the jurisdiction in which Grecko operates. Users agree that any disputes will be resolved in accordance with those laws.</p>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">12. Contact Information</h3>
-              <p>For questions or concerns regarding these Terms, contact:</p>
+              <h3 className="font-bold text-white mb-3 text-lg">9. Contact</h3>
+              <p>If you have questions about these Terms, contact:</p>
               <p className="mt-2 bg-blue-900/20 inline-block px-4 py-2 rounded-lg border border-blue-500/30">
                   Email: <a href={`mailto:${contactEmail}`} className="text-blue-400 hover:underline font-medium">{contactEmail}</a>
               </p>
@@ -407,128 +371,44 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           <div className="space-y-8 text-slate-300 leading-relaxed text-left">
             <div>
                 <p className="text-sm text-slate-500 mb-4">Last Updated: 30th November 2025</p>
-                <p>Welcome to Grecko, an educational app designed for middle school and above. These Terms of Use explain how you can use the app, what features are available, and what is expected of you as a user. By using Grecko, you agree to follow these rules.</p>
+                <p>These Terms of Use describe how Grecko can be used responsibly and effectively for educational purposes. By using Grecko, you agree to the following guidelines:</p>
             </div>
             
             <div className="w-full h-px bg-white/10" />
             
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">1. Creating Your Account</h3>
-              <p className="mb-2 font-medium">To use Grecko:</p>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li><strong>Sign Up:</strong> Provide your name, email address, school grade, and optionally your GPA. Create a secure password. By signing up, you agree to the Terms of Use and the Privacy Policy.</li>
-                  <li><strong>Profile Setup (Optional):</strong> You can add a short bio or learning goals. This helps Grecko provide more personalized AI study suggestions.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">1. Educational Purpose Only</h3>
+              <p>Grecko is intended solely as an educational support platform. It should not be used to facilitate cheating, plagiarism, or academic dishonesty.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">2. Uploading and Managing Content</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>You can upload assignments, notes, and study materials to keep track of your work.</li>
-                  <li>All uploaded content is securely stored in Supabase.</li>
-                  <li>You own your content, but by uploading it, you allow Grecko to use it for app functionality, like AI suggestions and assignment tracking.</li>
-                  <li>You can delete content or your account at any time.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">2. Responsible Use of AI</h3>
+              <p>AI-generated suggestions are meant to help you study more effectively, not replace your own learning. Always verify important content.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">3. Using AI Study Tools</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko provides AI-generated summaries, suggestions, and study tips.</li>
-                  <li>AI tools analyze your uploaded content or learning level to give helpful insights.</li>
-                  <li>AI content is educational; it may not always be 100% accurate, so verify important information.</li>
-                  <li>Misusing AI (e.g., generating inappropriate content) is prohibited.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">3. Uploading Content</h3>
+              <p>Only upload content you own or are authorized to use. Do not upload copyrighted or sensitive information.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">4. Tracking Progress</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko allows you to track assignments, grades, and study progress.</li>
-                  <li>You can view past uploads, AI suggestions, and your GPA history.</li>
-                  <li>Data is stored securely and used only to enhance your learning experience.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">4. Community Guidelines</h3>
+              <p>Use respectful language when interacting with support or other users. Harassment or abuse is not tolerated.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">5. Community Rules</h3>
-              <p className="mb-2">To keep Grecko safe and helpful for everyone:</p>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Do not upload harmful, illegal, or abusive content.</li>
-                  <li>Do not cheat, plagiarize, or use AI-generated content dishonestly.</li>
-                  <li>Respect other users; harassment, hate speech, or offensive content is prohibited.</li>
-              </ul>
-              <p className="mt-3 text-sm italic bg-white/5 p-3 rounded-lg border border-white/5">Grecko may remove content or suspend accounts that violate these rules.</p>
+              <h3 className="font-bold text-white mb-3 text-lg">5. Data Security</h3>
+              <p>Keep your login credentials secure.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">6. Account Responsibilities</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Keep your login credentials secure.</li>
-                  <li>You are responsible for everything that happens under your account.</li>
-                  <li>Report any security issues or unauthorized access to <a href={`mailto:${contactEmail}`} className="text-blue-400 hover:underline">{contactEmail}</a> immediately.</li>
-              </ul>
+              <h3 className="font-bold text-white mb-3 text-lg">6. Updates</h3>
+              <p>We may update these Terms of Use as features evolve. Continued use of Grecko means you accept the updates.</p>
             </section>
 
             <section>
-              <h3 className="font-bold text-white mb-3 text-lg">7. Service Availability</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>The app may occasionally be unavailable due to updates or maintenance.</li>
-                  <li>Features may change as the app improves.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">8. Privacy and Data</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko collects name, email, password (encrypted), GPA, school grade, assignments, notes, and AI-generated content.</li>
-                  <li>All data is stored securely in Supabase.</li>
-                  <li>Data is used only for AI suggestions, assignment tracking, account management, and support.</li>
-                  <li>Users can request updates, deletion, or access to their data at any time via <a href={`mailto:${contactEmail}`} className="text-blue-400 hover:underline">{contactEmail}</a>.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">9. Limitations</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko cannot guarantee academic results or learning outcomes.</li>
-                  <li>You are responsible for your own studies and verifying AI suggestions.</li>
-                  <li>Grecko is not liable for lost content or errors in AI-generated content.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">10. Account Termination</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Accounts may be suspended or deleted for violating rules.</li>
-                  <li>You may request deletion of your account at any time, and all data will be removed from Supabase.</li>
-                  <li>Terminated users may not create new accounts to bypass rules.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">11. Changes to Terms</h3>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li>Grecko may update these Terms from time to time.</li>
-                  <li>Users will be notified of major updates in the app.</li>
-                  <li>Continued use after updates constitutes agreement to the revised Terms.</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">12. Achieving Your GPA with Grecko (Layman’s Terms)</h3>
-              <p className="mb-2">Grecko is designed to help you achieve your desired GPA. For example, if you have only a few remaining tests or assignments, the app analyzes the subjects or tasks you have left and provides guidance to help you reach the GPA you want.</p>
-              <p className="mb-2">You can start using Grecko at the beginning of the semester, mid-term, or any point during your studies, though we recommend starting at the beginning of the term for the best results.</p>
-              <ul className="list-disc pl-5 space-y-2 marker:text-slate-500">
-                  <li><strong>Mid-term use:</strong> Grecko focuses on your remaining subjects or assessments to help you maximize your grades and reach your goal.</li>
-                  <li><strong>Beginning of term use:</strong> Grecko reviews all your subjects for the term and provides guidance to help you achieve your desired GPA across all courses.</li>
-              </ul>
-              <p className="mt-2">Grecko works by analyzing your coursework and providing tailored support to help you excel in your subjects and meet your academic goals.</p>
-            </section>
-
-            <section>
-              <h3 className="font-bold text-white mb-3 text-lg">13. Contact</h3>
-              <p>For questions, feedback, or support, contact:</p>
+              <h3 className="font-bold text-white mb-3 text-lg">7. Contact</h3>
+              <p>For any questions, contact:</p>
               <p className="mt-2 bg-blue-900/20 inline-block px-4 py-2 rounded-lg border border-blue-500/30">
                   Email: <a href={`mailto:${contactEmail}`} className="text-blue-400 hover:underline font-medium">{contactEmail}</a>
               </p>
@@ -540,18 +420,49 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
     }
   };
 
+  const platformHighlights = [
+    {
+      title: 'GPA Intelligence',
+      description: 'Forecast outcomes, track every assessment, and map the clearest route to your target GPA.',
+      icon: Target,
+    },
+    {
+      title: 'Adaptive Study Tools',
+      description: 'Flashcards, quizzes, and notes that adapt to how you learn, not just what you learn.',
+      icon: Cpu,
+    },
+    {
+      title: 'Always-on Mentor',
+      description: 'A calm AI advisor that aligns daily study with your long-term academic goals.',
+      icon: Brain,
+    },
+  ]
+
   return (
     <div ref={containerRef} className="bg-[#020205] min-h-screen relative overflow-x-hidden font-sans selection:bg-blue-500/30 pb-32">
       
       {/* 1. TOP HEADER (FIXED) */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-[#020205]/80 backdrop-blur-md border-b border-white/5">
-        <div className="text-2xl font-black text-white tracking-tighter italic">GRECKO</div>
-        <button 
-          onClick={() => setAuthModalMode('login')}
-          className="text-sm font-bold text-white/80 hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-full border border-white/10"
-        >
-          Sign In
-        </button>
+      <header className="fixed top-0 left-0 w-full z-50 px-6 py-5 flex justify-between items-center bg-[#05050a]/70 backdrop-blur-xl border-b border-white/5">
+        <div className="text-lg sm:text-xl font-semibold text-white tracking-[0.2em] uppercase">Grecko</div>
+        <nav className="hidden md:flex items-center gap-8 text-sm text-white/60 font-medium">
+          <a href="#platform" className="hover:text-white transition-colors">Platform</a>
+          <a href="#features" className="hover:text-white transition-colors">Features</a>
+          <a href="#mentor" className="hover:text-white transition-colors">Mentor</a>
+        </nav>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setAuthModalMode('login')}
+            className="text-sm font-semibold text-white/80 hover:text-white transition-colors px-4 py-2 rounded-full border border-white/10 bg-white/5"
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => setAuthModalMode('signup')}
+            className="hidden sm:inline-flex text-sm font-semibold text-black bg-white rounded-full px-4 py-2 shadow-[0_10px_30px_rgba(255,255,255,0.18)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Get Started
+          </button>
+        </div>
       </header>
 
       {/* 2. RESTORED 3D BACKGROUND (BLUEPRINT CORE) */}
@@ -575,10 +486,14 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
       <div className="relative z-10 pt-32">
         
         {/* HERO */}
-        <section className="min-h-[90vh] flex flex-col justify-center items-center text-center px-4 mb-20">
+        <section id="top" className="min-h-[92vh] flex flex-col justify-center items-center text-center px-6 mb-24">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <h1 className="text-[15vw] md:text-[12vw] font-black text-white leading-none tracking-tighter mb-4">
-              GRECKO
+            <div className="text-xs md:text-sm uppercase tracking-[0.4em] text-white/45 mb-6">
+              Student Companion Platform
+            </div>
+            <h1 className="text-5xl sm:text-7xl md:text-[7.5rem] font-semibold text-white leading-[0.95] tracking-tight mb-6">
+              Create calm focus
+              <span className="block text-white/90">for every semester.</span>
             </h1>
             <div className="h-10 md:h-16">
                <span className="text-xl md:text-3xl text-blue-400 font-mono font-bold">
@@ -586,8 +501,25 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
                  <span className="animate-pulse">_</span>
                </span>
             </div>
-            <p className="text-white/50 mt-8 max-w-md mx-auto">
-              The Strategic Academic Operating System.
+            <p className="text-white/60 mt-8 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">
+              Grecko keeps your plan, progress, and study momentum in one elegant workspace, so you always know what to do next.
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => setAuthModalMode('signup')}
+                className="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-black font-semibold shadow-[0_20px_60px_rgba(255,255,255,0.18)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Create your account
+              </button>
+              <button
+                onClick={() => setAuthModalMode('login')}
+                className="w-full sm:w-auto px-8 py-4 rounded-full border border-white/15 text-white/80 font-semibold hover:text-white hover:border-white/40 transition-colors"
+              >
+                Sign in
+              </button>
+            </div>
+            <p className="mt-6 text-xs uppercase tracking-[0.3em] text-white/35">
+              Built for students who want clarity
             </p>
           </motion.div>
           
@@ -601,6 +533,39 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </motion.div>
         </section>
 
+        {/* PLATFORM OVERVIEW */}
+        <section id="platform" className="px-6 mb-32">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-3">Platform</p>
+                <h2 className="text-4xl md:text-5xl font-semibold text-white">All of your academic tools, one calm interface.</h2>
+              </div>
+              <p className="text-white/50 max-w-xl leading-relaxed">
+                Grecko blends planning, performance tracking, and intelligent study support into a refined experience that feels effortless.
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3">
+              {platformHighlights.map((highlight) => {
+                const Icon = highlight.icon
+                return (
+                  <div
+                    key={highlight.title}
+                    className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-6">
+                      <Icon className="w-6 h-6 text-blue-300" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white mb-3">{highlight.title}</h3>
+                    <p className="text-white/50 leading-relaxed">{highlight.description}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        <div id="features" />
         {/* SECTION 1: PREDICTIVE GPA (With Animated Graph) */}
         <FeatureSection 
           title="Predictive GPA"
@@ -669,6 +634,7 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
         </FeatureSection>
 
         {/* SECTION 3: AI MENTOR (High Contrast & Typing) */}
+        <div id="mentor" />
         <FeatureSection 
           title="AI Mentor"
           subtitle="24/7 Strategic advice. It knows your grades, your goals, and exactly what you need to study next."
@@ -820,6 +786,11 @@ export const Landing: React.FC<LandingProps> = ({ onLoginWithEmail, onSignupWith
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* 7. FOOTER */}
+      <footer className="mt-40 px-6 text-center text-white/30 text-xs uppercase tracking-[0.3em]">
+        Grecko © 2025
+      </footer>
     </div>
   )
 }
